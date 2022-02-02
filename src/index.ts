@@ -1,3 +1,3 @@
-export const cat = {
-  say: 'meow',
-};
+import getStorageExplorerMiddleware from './storageExplorer/middlewares/getStorageExplorerMiddleware';
+
+export default getStorageExplorerMiddleware;
