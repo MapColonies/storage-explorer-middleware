@@ -1,3 +1,2 @@
-import getStorageExplorerMiddleware from './storageExplorer/middlewares/getStorageExplorerMiddleware';
-
-export default getStorageExplorerMiddleware;
+export { default as getStorageExplorerMiddleware } from './storageExplorer/middlewares/getStorageExplorerMiddleware';
+export * from './common/interfaces';

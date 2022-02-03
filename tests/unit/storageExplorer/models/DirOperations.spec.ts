@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { Dirent, ReadStream } from 'fs';
-import config from 'config';
-import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
+import { BadRequestError, NotFoundError } from '@map-colonies/error-types';
 import { DirOperations } from '../../../../src/common/utilities';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
