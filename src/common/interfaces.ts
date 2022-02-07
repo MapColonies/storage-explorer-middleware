@@ -1,4 +1,5 @@
 import { ReadStream } from 'fs';
+
 export interface IStream {
   stream: ReadStream;
   contentType: string;

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 import { Dirent, ReadStream } from 'fs';
 import { BadRequestError, NotFoundError } from '@map-colonies/error-types';
 import { DirOperations } from '../../../../src/common/utilities';
+import LoggersHandler from '../../../../src/common/utilities/LoggersHandler';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
-import LoggersHandler from '../../../../src/common/utilities/LoggersHandler';
 
 let dirOperations: DirOperations;
 let logger;
@@ -25,7 +24,7 @@ const mountDirs = [
 
 describe('storage explorer dirOperations', () => {
   beforeEach(function () {
-    logger = new LoggersHandler(console);
+    logger = new LoggersHandler((console as unknown) as Record<string, unknown>);
     dirOperations = new DirOperations(logger, mountDirs);
   });
 
