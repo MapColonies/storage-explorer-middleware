@@ -1,5 +1,5 @@
 // Part of 'chonky' FileData interface https://github.com/TimboKZ/Chonky/blob/2.x/packages/chonky/src/types/file.types.ts
-export default interface IFile {
+export interface IFile {
   id: string; // (Required) String that uniquely identifies the file
   name: string; // (Required) Full name, e.g. `MyImage.jpg`
   parentId: string; // Parent dir id.

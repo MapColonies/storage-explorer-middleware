@@ -1,5 +1,4 @@
-import IFile from '../../storageExplorer/models/file.model';
-import IFileMap from '../../storageExplorer/models/fileMap.model';
+import { IFile, IFileMap } from '../../storageExplorer/models';
 
 export const filesArrayToMapObject = (filesArr: IFile[]): IFileMap<IFile> => {
   const fileMap: IFileMap<IFile> = {};

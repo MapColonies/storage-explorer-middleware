@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptPath } from '../../../src/common/utilities';
-import getStorageExplorerMiddleware from '../../../src';
+import { getStorageExplorerMiddleware } from '../../../src';
 import LoggersHandler from '../../../src/common/utilities/LoggersHandler';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
 import { innerDirSnap, rootDirSnap } from './snapshots/directory';

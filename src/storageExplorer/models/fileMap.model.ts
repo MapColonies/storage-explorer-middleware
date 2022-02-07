@@ -1,5 +1,5 @@
-import IFile from './file.model';
+import { IFile } from './';
 
-export default interface IFileMap<FT extends IFile> {
+export interface IFileMap<FT extends IFile> {
   [fieldId: string]: FT;
 }

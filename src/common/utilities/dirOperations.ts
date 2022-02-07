@@ -2,8 +2,7 @@ import { promises as fsPromises, Dirent, PathLike, createReadStream, statSync, e
 import * as Path from 'path';
 import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
 import { ImountDirObj, IStream } from '../interfaces';
-import IFileMap from '../../storageExplorer/models/fileMap.model';
-import IFile from '../../storageExplorer/models/file.model';
+import { IFile, IFileMap } from '../../storageExplorer/models';
 import LoggersHandler from './LoggersHandler';
 import { encryptPath, filesArrayToMapObject } from '.';
 
@@ -19,7 +18,8 @@ class DirOperations {
   // get physical name or regular name
   public getPhysicalPath(path: string): string {
     this.logger.info(`[DirOperations][getPhysicalPath] getting physical path for ${path}`);
-    const safePath = Path.normalize(path);
+    const safePath = Path.normalize(path.replace(/^\/\\(?!\\)/g, '/\\\\'));
+
     if (safePath.startsWith('.')) {
       throw new BadRequestError(this.invalidPath);
     }

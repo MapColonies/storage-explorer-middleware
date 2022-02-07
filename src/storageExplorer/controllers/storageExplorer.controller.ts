@@ -1,8 +1,8 @@
 import path from 'path';
 import { RequestHandler, Response } from 'express';
 import { InternalServerError } from '@map-colonies/error-types';
-import IFile from '../models/file.model';
-import IFileMap from '../models/fileMap.model';
+import { IFile } from '../models';
+import { IFileMap } from '../models';
 import { decryptPath, DirOperations, encryptPath, filesArrayToMapObject } from '../../common/utilities';
 import { ImountDirObj, IStream } from '../../common/interfaces';
 import LoggersHandler from '../../common/utilities/LoggersHandler';
