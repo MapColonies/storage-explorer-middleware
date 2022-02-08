@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptPath } from '../../../src/common/utilities';
-import { getStorageExplorerMiddleware } from '../../../src';
-import LoggersHandler from '../../../src/common/utilities/LoggersHandler';
+import getStorageExplorerMiddleware from '../../../src';
+import { LoggersHandler } from '../../../src/common/utilities';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
 import { innerDirSnap, rootDirSnap } from './snapshots/directory';
 import { fileData } from './snapshots/file';
@@ -12,7 +12,7 @@ import { app, server } from './helpers/server_test';
 describe('Storage Explorer', function () {
   let dirOperaions: DirOperations;
   let requestSender: StorageExplorerRequestSender;
-  let logger: LoggersHandler;
+  let logger: Record<string, unknown>;
   const mountDirs = [
     {
       physical: './MOCKS',
@@ -29,10 +29,10 @@ describe('Storage Explorer', function () {
   ];
 
   beforeEach(function () {
-    logger = new LoggersHandler(console);
+    logger = (console as unknown) as Record<string, unknown>;
     app.use(getStorageExplorerMiddleware(mountDirs, logger));
     requestSender = new StorageExplorerRequestSender(app);
-    dirOperaions = new DirOperations(logger, mountDirs);
+    dirOperaions = new DirOperations((logger as unknown) as LoggersHandler, mountDirs);
   });
 
   afterEach(() => {

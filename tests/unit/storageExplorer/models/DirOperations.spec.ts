@@ -1,7 +1,7 @@
 import { Dirent, ReadStream } from 'fs';
 import { BadRequestError, NotFoundError } from '@map-colonies/error-types';
 import { DirOperations } from '../../../../src/common/utilities';
-import LoggersHandler from '../../../../src/common/utilities/LoggersHandler';
+import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
 
