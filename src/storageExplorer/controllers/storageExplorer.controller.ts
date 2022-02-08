@@ -1,23 +1,23 @@
 import path from 'path';
+import { statSync } from 'fs';
 import { RequestHandler, Response } from 'express';
 import { InternalServerError } from '@map-colonies/error-types';
-import { IFile } from '../models';
-import { IFileMap } from '../models';
-import { decryptPath, DirOperations, encryptPath, filesArrayToMapObject } from '../../common/utilities';
+import IFile from '../models/file.model';
+import { decryptPath, DirOperations, encryptPath } from '../../common/utilities';
 import { ImountDirObj, IStream } from '../../common/interfaces';
-import LoggersHandler from '../../common/utilities/LoggersHandler';
+import { LoggersHandler } from '../../common/utilities';
 
 // Should return file content by its id
-type GetFileByIdHandler = RequestHandler<undefined, undefined, undefined, { id: string }>;
+type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
 
 // Should return file stream
-type GetFileHandler = RequestHandler<undefined, undefined, undefined, { pathSuffix: string }>;
+type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { pathSuffix: string }>;
 
-// Should return FileMap ( directory content )
-type GetDirectoryHandler = RequestHandler<undefined, { data: IFileMap<IFile> }, undefined, { pathSuffix: string }>;
+// Should return IFile[] ( directory content )
+type GetDirectoryHandler = RequestHandler<undefined, IFile[], undefined, { pathSuffix: string }>;
 
-// Should return file content by its id
-type GetDirectoryByIdHandler = RequestHandler<undefined, { data: IFileMap<IFile> }, undefined, { id: string }>;
+// Should return dir content by its id
+type GetDirectoryByIdHandler = RequestHandler<undefined, IFile[], undefined, { id: string }>;
 
 // Should decrypt id to path suffix
 type DecryptIdHandler = RequestHandler<undefined, { data: string }, undefined, { id: string }>;
@@ -63,9 +63,9 @@ export class StorageExplorerController {
   public getDirectory: GetDirectoryHandler = async (req, res, next) => {
     try {
       const pathSuffix: string = this.dirOperations.getPhysicalPath(req.query.pathSuffix);
-      const dirContentMap = await this.getFilesMap(pathSuffix);
+      const dirContentArr = await this.getFilesArray(pathSuffix);
 
-      res.send({ data: dirContentMap });
+      res.send(dirContentArr);
     } catch (e) {
       next(e);
     }
@@ -75,9 +75,9 @@ export class StorageExplorerController {
     try {
       const dirId: string = req.query.id;
       const decryptedPathId = decryptPath(dirId);
-      const dirContentMap = await this.getFilesMap(decryptedPathId);
+      const dirContentArr = await this.getFilesArray(decryptedPathId);
 
-      res.send({ data: dirContentMap });
+      res.send(dirContentArr);
     } catch (e) {
       next(e);
     }
@@ -102,27 +102,34 @@ export class StorageExplorerController {
     });
   };
 
-  private readonly getFilesMap = async (pathSuffix: string): Promise<IFileMap<IFile>> => {
+  private readonly getFilesArray = async (pathSuffix: string): Promise<IFile[]> => {
     if (pathSuffix === '/') {
       return this.dirOperations.generateRootDir();
     }
 
     const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix);
     const dirContentArray: IFile[] = directoryContent.map((entry) => {
-      const filePathEncrypted = encryptPath(path.join(pathSuffix, entry.name));
+      const completePath = path.join(pathSuffix, entry.name);
+      const filePathEncrypted = encryptPath(completePath);
       const parentPathEncrypted = encryptPath(pathSuffix);
+      const fileStats = statSync(completePath);
 
       const fileFromEntry: IFile = {
         id: filePathEncrypted,
         name: entry.name,
         isDir: entry.isDirectory(),
         parentId: parentPathEncrypted,
+        size: fileStats.size,
+        modDate: fileStats.mtime,
       };
+
+      if (fileFromEntry.isDir) {
+        delete fileFromEntry.size;
+      }
 
       return fileFromEntry;
     });
 
-    const dirContentMap = filesArrayToMapObject(dirContentArray);
-    return dirContentMap;
+    return dirContentArray;
   };
 }

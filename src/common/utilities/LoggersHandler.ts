@@ -1,4 +1,4 @@
-export default class LoggersHandler {
+export class LoggersHandler {
   public constructor(private readonly logger: Record<string, unknown>) {}
 
   public info(...payload: string[]): void {

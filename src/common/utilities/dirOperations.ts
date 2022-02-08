@@ -2,9 +2,9 @@ import { promises as fsPromises, Dirent, PathLike, createReadStream, statSync, e
 import * as Path from 'path';
 import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
 import { ImountDirObj, IStream } from '../interfaces';
-import { IFile, IFileMap } from '../../storageExplorer/models';
-import LoggersHandler from './LoggersHandler';
-import { encryptPath, filesArrayToMapObject } from '.';
+import IFile from '../../storageExplorer/models/file.model';
+import { LoggersHandler } from '.';
+import { encryptPath } from '.';
 
 class DirOperations {
   private readonly fileNotFoundErr = 'No such file or directory';
@@ -40,22 +40,25 @@ class DirOperations {
     return safePath;
   }
 
-  public generateRootDir(): IFileMap<IFile> {
+  public generateRootDir(): IFile[] {
     this.logger.info('[DirOperations][generateRootDir] generating mounts root dir');
     const mountDirectories = this.mountDirs;
 
     const mountFilesArr = mountDirectories.map((mountDir) => {
+      const dirStats = statSync(mountDir.physical);
+
       const fileFromMountDir: IFile = {
         id: encryptPath(mountDir.physical),
         name: mountDir.displayName,
         isDir: true,
         parentId: encryptPath('/'),
+        modDate: dirStats.mtime,
       };
 
       return fileFromMountDir;
     });
 
-    return filesArrayToMapObject(mountFilesArr);
+    return mountFilesArr;
   }
 
   public async getDirectoryContent(path: PathLike): Promise<Dirent[]> {

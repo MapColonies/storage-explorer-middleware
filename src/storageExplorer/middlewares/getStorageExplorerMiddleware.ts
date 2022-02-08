@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ImountDirObj } from '../../common/interfaces';
-import LoggersHandler from '../../common/utilities/LoggersHandler';
+import { LoggersHandler } from '../../common/utilities';
 import { StorageExplorerController } from '../controllers/storageExplorer.controller';
 import { explorerRoutes } from '../routes/storageExplorer.router';
 

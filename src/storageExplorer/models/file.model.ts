@@ -1,11 +1,10 @@
-export interface IFile {
+export default interface IFile {
   id: string;
   name: string;
   parentId: string;
-  ext?: string;
-  isDir?: boolean;
-  isHidden?: boolean;
-  size?: number;
-  modDate?: Date | string;
+  isDir: boolean;
+  modDate: Date | string;
+  size?: number; // bytes
   childrenCount?: number;
+  childrenIds?: string[];
 }

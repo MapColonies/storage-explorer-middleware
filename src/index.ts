@@ -1,3 +1,3 @@
-export { default as getStorageExplorerMiddleware } from './storageExplorer/middlewares/getStorageExplorerMiddleware';
+export { default } from './storageExplorer/middlewares/getStorageExplorerMiddleware';
+export { default as IFile } from './storageExplorer/models/file.model';
 export * from './common/interfaces';
-export * from './storageExplorer/models';
