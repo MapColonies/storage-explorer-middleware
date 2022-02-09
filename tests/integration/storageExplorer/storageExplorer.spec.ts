@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptPath } from '../../../src/common/utilities';
-import getStorageExplorerMiddleware from '../../../src';
+import getStorageExplorerMiddleware, { IFile } from '../../../src';
 import { LoggersHandler } from '../../../src/common/utilities';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
 import { innerDirSnap, rootDirSnap } from './snapshots/directory';
@@ -43,30 +43,55 @@ describe('Storage Explorer', function () {
     describe('directory', () => {
       it('should return root dir and match snapshot from mock', async () => {
         const res = await requestSender.getDirectory('/');
+        const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(rootDirSnap);
+        expect(
+          body.map((item) => {
+            const { modDate, ...rest } = item;
+            return rest;
+          })
+        ).toMatchObject(rootDirSnap);
       });
 
       it('should return root dir when requested root traversal', async () => {
         const res = await requestSender.getDirectory('/../../../');
+        const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(rootDirSnap);
+        expect(
+          body.map((item) => {
+            const { modDate, ...rest } = item;
+            return rest;
+          })
+        ).toMatchObject(rootDirSnap);
       });
 
       it('should return data of inner directories', async () => {
         const res = await requestSender.getDirectory('/\\\\First_mount_dir');
+        const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(innerDirSnap);
+        expect(
+          body.map((item) => {
+            const { modDate, ...rest } = item;
+            return rest;
+          })
+        ).toMatchObject(innerDirSnap);
       });
 
       it('should return root dir by id and match snapshot from mock', async () => {
         const res = await requestSender.getDirectoryById('4dt.yTVSoCcyvIqAxvCeeA--');
+        const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res.body).toMatchObject(rootDirSnap);
+        expect(
+          body.map((item) => {
+            const { modDate, ...rest } = item;
+            return rest;
+          })
+        ).toMatchObject(rootDirSnap);
       });
 
       it('should return data of inner directories by id', async () => {

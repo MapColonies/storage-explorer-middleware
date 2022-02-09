@@ -49,7 +49,10 @@ describe('storage explorer dirOperations', () => {
 
   describe('#generateRootDir', () => {
     it('should return "virtual" root dir with all mountDirs from config', () => {
-      const rootDir = dirOperations.generateRootDir();
+      const rootDir = dirOperations.generateRootDir().map((item) => {
+        const { modDate, ...rest } = item;
+        return rest;
+      });
       const expectedVal = generateRootDirSnap;
       expect(rootDir).toMatchObject(expectedVal);
     });
