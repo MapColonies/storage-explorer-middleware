@@ -43,7 +43,7 @@ describe('storage explorer dirOperations', () => {
       };
 
       expect(physicalPathError).toThrow(BadRequestError);
-      expect(physicalPathError).toThrow('Invalid path');
+      expect(physicalPathError).toThrow('fp.error.path_invalid');
     });
   });
 
@@ -68,14 +68,14 @@ describe('storage explorer dirOperations', () => {
       const notExistsPath = './MOCKS/3D_data/1b/3b';
 
       await expect(dirOperations.getDirectoryContent(notExistsPath)).rejects.toThrow(NotFoundError);
-      await expect(dirOperations.getDirectoryContent(notExistsPath)).rejects.toThrow('No such file or directory');
+      await expect(dirOperations.getDirectoryContent(notExistsPath)).rejects.toThrow('fp.error.file_not_found');
     });
 
     it('should throw an error if path is not a dir', async () => {
       const filePath = './MOCKS/3D_data/1b/metadata.json';
 
       await expect(dirOperations.getDirectoryContent(filePath)).rejects.toThrow(BadRequestError);
-      await expect(dirOperations.getDirectoryContent(filePath)).rejects.toThrow('Path is not a directory');
+      await expect(dirOperations.getDirectoryContent(filePath)).rejects.toThrow('fp.error.path_is_not_dir');
     });
   });
 
@@ -102,7 +102,7 @@ describe('storage explorer dirOperations', () => {
       };
 
       expect(fileStreamError).toThrow(NotFoundError);
-      expect(fileStreamError).toThrow('No such file or directory');
+      expect(fileStreamError).toThrow('fp.error.file_not_found');
     });
 
     it('should throw an error if path is not a JSON file', () => {
@@ -113,7 +113,7 @@ describe('storage explorer dirOperations', () => {
       };
 
       expect(fileStreamError).toThrow(BadRequestError);
-      expect(fileStreamError).toThrow('File type is not supported');
+      expect(fileStreamError).toThrow('fp.error.file_not_supported');
     });
   });
 });

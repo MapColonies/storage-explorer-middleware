@@ -6,13 +6,14 @@ import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
 import { encryptPath } from '.';
 
+enum StorageExplorerErrors {
+  FILE_NOT_FOUND = 'fp.error.file_not_found',
+  FILE_TYPE_NOT_SUPPORTED = 'fp.error.file_not_supported',
+  STREAM_CREATION_ERR = 'fp.error.stream_creation_err',
+  PATH_IS_NOT_DIR = 'fp.error.path_is_not_dir',
+  PATH_INVALID = 'fp.error.path_invalid',
+}
 class DirOperations {
-  private readonly fileNotFoundErr = 'No such file or directory';
-  private readonly fileTypeNotSupported = 'File type is not supported';
-  private readonly couldNotCreateStream = 'Error creating a stream for the requested file';
-  private readonly pathIsNotDir = 'Path is not a directory';
-  private readonly invalidPath = 'Invalid path';
-
   public constructor(private readonly logger: LoggersHandler, private readonly mountDirs: ImountDirObj[]) {}
 
   // get physical name or regular name
@@ -21,7 +22,7 @@ class DirOperations {
     const safePath = Path.normalize(path.replace(/^\/\\(?!\\)/g, '/\\\\'));
 
     if (safePath.startsWith('.')) {
-      throw new BadRequestError(this.invalidPath);
+      throw new BadRequestError(StorageExplorerErrors.PATH_INVALID);
     }
 
     const mountDirectories = this.mountDirs.map((mountDir) => {
@@ -66,13 +67,13 @@ class DirOperations {
     const isDirExists = existsSync(path);
 
     if (!isDirExists) {
-      throw new NotFoundError(this.fileNotFoundErr);
+      throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
     }
 
     const isDir = statSync(path).isDirectory();
 
     if (!isDir) {
-      throw new BadRequestError(this.pathIsNotDir);
+      throw new BadRequestError(StorageExplorerErrors.PATH_IS_NOT_DIR);
     }
 
     return fsPromises.readdir(path, { withFileTypes: true });
@@ -83,13 +84,13 @@ class DirOperations {
     const isFileExists = existsSync(path);
 
     if (!isFileExists) {
-      throw new NotFoundError(this.fileNotFoundErr);
+      throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
     }
 
     const isJson = Path.extname(path as string) === '.json';
 
     if (!isJson) {
-      throw new BadRequestError(this.fileTypeNotSupported);
+      throw new BadRequestError(StorageExplorerErrors.FILE_TYPE_NOT_SUPPORTED);
     }
 
     try {
@@ -107,7 +108,7 @@ class DirOperations {
       return streamProduct;
     } catch (e) {
       this.logger.error(`[DirOperations][getJsonFileStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
-      throw new InternalServerError(this.couldNotCreateStream);
+      throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
     }
   }
 }
