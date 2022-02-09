@@ -2,19 +2,16 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  globals: {
+    'ts-jest': {
+      tsconfig: 'tsconfig.test.json',
+    },
+  },
   testMatch: ['<rootDir>/tests/unit/**/*.spec.ts'],
-  collectCoverage: true,
-  collectCoverageFrom: ['<rootDir>/src/**/*.ts', '!**/node_modules/**', '!**/vendor/**'],
-  coverageDirectory: '<rootDir>/coverage',
-  coverageReporters: ['text-summary', 'html', 'json'],
   rootDir: '../../../.',
-  setupFiles: ['<rootDir>/tests/configurations/jest.setup.js'],
+  setupFiles: ['<rootDir>/tests/configurations/jest.setup.ts'],
   preset: 'ts-jest',
   testEnvironment: 'node',
-  reporters: [
-    'default',
-    ['jest-html-reporters', { multipleReportsUnitePath: './reports', pageTitle: 'unit', publicPath: './reports', filename: 'unit.html' }],
-  ],
   coverageThreshold: {
     global: {
       branches: 80,
