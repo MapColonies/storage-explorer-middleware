@@ -24,7 +24,7 @@ const mountDirs = [
 
 describe('storage explorer dirOperations', () => {
   beforeEach(function () {
-    logger = new LoggersHandler((console as unknown) as Record<string, unknown>);
+    logger = new LoggersHandler(console as unknown as Record<string, unknown>);
     dirOperations = new DirOperations(logger, mountDirs);
   });
 
