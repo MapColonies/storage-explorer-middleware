@@ -8,6 +8,8 @@ A node.js middleware used to expose explorer endpoint, accessing directories and
 Using npm
 
     npm i @map-colonies/storage-explorer-middleware
+    
+  *OR*
 
 Using yarn
 
