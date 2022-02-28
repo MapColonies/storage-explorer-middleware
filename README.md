@@ -53,7 +53,7 @@ Simply connect the middleware to your server instance and pass the required para
 
 ***Notes***
 
-Please make sure to add file explorer routes to your openapi.yaml file, or all of the middleware routes will be blocked.
+Please make sure to add file explorer routes to your openapi.yaml file, or all middleware routes will be blocked.
 *(You can also add it to the ignore path regex to exclude explorer routes from the validations)*
 
 
