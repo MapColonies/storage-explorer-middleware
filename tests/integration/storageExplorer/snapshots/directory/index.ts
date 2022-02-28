@@ -21,11 +21,23 @@ export const rootDirSnap = [
 ];
 
 export const innerDirSnap = [
-  { id: '5rsK5Yb3mP02eL1a0mW4WQ--', isDir: true, name: '3D_data', parentId: '7JtPOli87ygL..X4xb_1Nw--' },
+  {
+    id: '5rsK5Yb3mP02eL1a0mW4WQ--',
+    name: '3D_data',
+    isDir: true,
+    parentId: '7JtPOli87ygL..X4xb_1Nw--',
+  },
   {
     id: 'IrGIWn9rTrD77HKJZ.u59qkBpzrcByXx7URL.z0PoD0-',
-    isDir: true,
     name: 'raster_data',
+    isDir: true,
     parentId: '7JtPOli87ygL..X4xb_1Nw--',
+  },
+  {
+    id: '84fNqOa9pZlrhnhUswBQqA--',
+    name: 'test.tif',
+    isDir: false,
+    parentId: '7JtPOli87ygL..X4xb_1Nw--',
+    size: 0,
   },
 ];

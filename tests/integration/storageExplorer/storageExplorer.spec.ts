@@ -17,6 +17,7 @@ describe('Storage Explorer', function () {
     {
       physical: './MOCKS',
       displayName: '\\First_mount_dir',
+      includeFilesExt: ['tif'],
     },
     {
       physical: './MOCKS_2',
