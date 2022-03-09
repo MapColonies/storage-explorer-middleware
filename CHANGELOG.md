@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/MapColonies/storage-explorer-middleware/compare/v1.1.4...v1.2.0) (2022-03-09)
+
+
+### Features
+
+* add files filter to middleware config jira issue -mapco-1775 ([7384489](https://github.com/MapColonies/storage-explorer-middleware/commit/7384489a778aecb39e0a8317f4c511f8a2d9574a))
+
 ### 1.1.5 (2022-03-01)
 
 ### 1.1.4 (2022-02-28)
