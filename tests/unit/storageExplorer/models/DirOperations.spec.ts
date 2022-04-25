@@ -48,8 +48,9 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#generateRootDir', () => {
-    it('should return "virtual" root dir with all mountDirs from config', () => {
-      const rootDir = dirOperations.generateRootDir().map((item) => {
+    it('should return "virtual" root dir with all mountDirs from config', async () => {
+      const generatedRootDirs = await dirOperations.generateRootDir();
+      const rootDir = generatedRootDirs.map((item) => {
         const { modDate, ...rest } = item;
         return rest;
       });
@@ -85,7 +86,7 @@ describe('storage explorer dirOperations', () => {
   describe('#getJsonFileStream', () => {
     it('should return IStream object with file content as a ReadStream', async () => {
       const filePath = './MOCKS/3D_data/1b/product.json';
-      const fileStream = dirOperations.getJsonFileStream(filePath);
+      const fileStream = await dirOperations.getJsonFileStream(filePath);
 
       expect(fileStream).toHaveProperty('stream');
       expect(fileStream).toHaveProperty('contentType');
@@ -100,7 +101,7 @@ describe('storage explorer dirOperations', () => {
     it('should throw an error if file not exists', () => {
       const notExistsPath = './MOCKS/3D_data/1b/product_not_exist.json';
 
-      const fileStreamError = () => {
+      const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(notExistsPath);
       };
 
@@ -111,7 +112,7 @@ describe('storage explorer dirOperations', () => {
     it('should throw an error if path is not a JSON file', () => {
       const nonJsonPath = './MOCKS/3D_data/1b/text.txt';
 
-      const fileStreamError = () => {
+      const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(nonJsonPath);
       };
 

@@ -36,26 +36,39 @@ function urlDecodeBase64(encodedBase64Input: string): string {
   return encodedBase64Input.replace(/\./g, '+').replace(/_/g, '/').replace(/-/g, '=');
 }
 
-export const encryptPath = (path: string): string => {
+export const encryptPath = (pathsArr: string[]): string[] => {
   try {
     const key = crypto.scryptSync(encryptionPass, salt, keySize);
     const cipher = crypto.createCipheriv(algorithm, key, pathIv);
-    const encryptedPath = Buffer.concat([cipher.update(path), cipher.final()]).toString(outputType);
 
-    return urlEncodeBase64(encryptedPath);
+    const encryptedPaths = pathsArr.map((path) => {
+      try {
+        // console.log(cipher.final().toString(outputType))
+        return Buffer.concat([cipher.update(path), cipher.final()]).toString(outputType);
+      } catch (e) {
+        console.log('ERROR!!!', e);
+        return '';
+      }
+    });
+
+    console.log(encryptedPaths.map((path) => urlEncodeBase64(path)));
+    return encryptedPaths.map((path) => urlEncodeBase64(path));
   } catch (e) {
-    throw new InternalServerError(`Couldn't create encryption for this path error: ${e as string}`);
+    throw new InternalServerError(`Couldn't create encryption for these paths error: ${e as string}`);
   }
 };
 
-export const decryptPath = (encryptedPath: string): string => {
+export const decryptPath = (encryptedPathsArr: string[]): string[] => {
   try {
     const key = crypto.scryptSync(encryptionPass, salt, keySize);
     const decipher = crypto.createDecipheriv(algorithm, key, pathIv);
-    const decrypedPath = Buffer.concat([decipher.update(urlDecodeBase64(encryptedPath), outputType), decipher.final()]).toString();
 
-    return decrypedPath;
+    const decryptedPathsBuffers = encryptedPathsArr.map((path) =>
+      Buffer.concat([decipher.update(urlDecodeBase64(path), outputType), decipher.final()]).toString()
+    );
+
+    return decryptedPathsBuffers;
   } catch (e) {
-    throw new InternalServerError("Couldn't decrypt the provided id");
+    throw new InternalServerError("Couldn't decrypt the provided ids");
   }
 };

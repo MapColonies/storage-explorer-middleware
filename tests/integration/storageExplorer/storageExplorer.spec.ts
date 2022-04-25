@@ -36,7 +36,7 @@ describe('Storage Explorer', function () {
   });
 
   afterEach(() => {
-    afterEach(() => server.close());
+    server.close();
   });
 
   describe('given valid params', () => {
@@ -67,8 +67,8 @@ describe('Storage Explorer', function () {
         ).toMatchObject(rootDirSnap);
       });
 
-      it('should return data of inner directories', async () => {
-        const res = await requestSender.getDirectory('/\\\\First_mount_dir');
+      fit('should return data of inner directories', async () => {
+        const res = await requestSender.getDirectory('/\\\\First_mount_dir/3D_data');
         const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
@@ -112,8 +112,8 @@ describe('Storage Explorer', function () {
 
       it('should return file content by id and match snapshot from mock', async () => {
         const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/product.json');
-        const encryptedNotJsonPath = encryptPath(physicalPath);
-        const res = await requestSender.getFileById(encryptedNotJsonPath);
+        const encryptedNotJsonPath = encryptPath([physicalPath]);
+        const res = await requestSender.getFileById(encryptedNotJsonPath[0]);
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res.body).toMatchObject(fileData);
@@ -183,8 +183,8 @@ describe('Storage Explorer', function () {
 
       it('should return 400 if file is not a JSON', async () => {
         const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/text.txt');
-        const encryptedNotJsonPath = encryptPath(physicalPath);
-        const { status } = await requestSender.getFileById(encryptedNotJsonPath);
+        const encryptedNotJsonPath = encryptPath([physicalPath]);
+        const { status } = await requestSender.getFileById(encryptedNotJsonPath[0]);
         expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 

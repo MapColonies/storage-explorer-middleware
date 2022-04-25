@@ -6,12 +6,12 @@ describe('storage explorer cryptoUtils', () => {
 
   describe('#encryptPath', () => {
     it('should return url-safe encrypted path', () => {
-      const encrypted = encryptPath(path);
+      const encrypted = encryptPath([path])[0];
       expect(encrypted).toBe(hash);
     });
 
     it('should return decrypted path', () => {
-      const decrypted = decryptPath(hash);
+      const decrypted = decryptPath([hash])[0];
       expect(decrypted).toBe(path);
     });
   });

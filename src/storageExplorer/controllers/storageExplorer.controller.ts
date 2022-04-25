@@ -1,5 +1,7 @@
+/* eslint-disable import/exports-last */
 import path from 'path';
-import { statSync } from 'fs';
+import { Dirent } from 'fs';
+import { stat as statPromise } from 'fs/promises';
 import { RequestHandler, Response } from 'express';
 import { InternalServerError } from '@map-colonies/error-types';
 import IFile from '../models/file.model';
@@ -29,21 +31,21 @@ export class StorageExplorerController {
     private readonly dirOperations: DirOperations = new DirOperations(logger, mountDirs)
   ) {}
 
-  public getFile: GetFileHandler = (req, res, next) => {
+  public getFile: GetFileHandler = async (req, res, next) => {
     try {
       const pathSuffix: string = this.dirOperations.getPhysicalPath(req.query.pathSuffix);
       const filePath = pathSuffix;
-      this.sendStream(res, 'getFile', filePath);
+      await this.sendStream(res, 'getFile', filePath);
     } catch (e) {
       next(e);
     }
   };
 
-  public getFileById: GetFileByIdHandler = (req, res, next) => {
+  public getFileById: GetFileByIdHandler = async (req, res, next) => {
     try {
       const fileId: string = req.query.id;
-      const pathDecrypted = decryptPath(fileId);
-      this.sendStream(res, 'getFileById', pathDecrypted);
+      const pathDecrypted = decryptPath([fileId]);
+      await this.sendStream(res, 'getFileById', pathDecrypted[0]);
     } catch (e) {
       next(e);
     }
@@ -53,8 +55,8 @@ export class StorageExplorerController {
     try {
       const encryptedId: string = req.query.id;
       this.logger.info(`[StorageExplorerController][decryptId] decrypting id: "${encryptedId}"`);
-      const pathDecrypted = decryptPath(encryptedId);
-      res.send({ data: pathDecrypted });
+      const pathDecrypted = decryptPath([encryptedId]);
+      res.send({ data: pathDecrypted[0] });
     } catch (e) {
       next(e);
     }
@@ -74,8 +76,8 @@ export class StorageExplorerController {
   public getdirectoryById: GetDirectoryByIdHandler = async (req, res, next) => {
     try {
       const dirId: string = req.query.id;
-      const decryptedPathId = decryptPath(dirId);
-      const dirContentArr = await this.getFilesArray(decryptedPathId);
+      const decryptedPathId = decryptPath([dirId]);
+      const dirContentArr = await this.getFilesArray(decryptedPathId[0]);
 
       res.send(dirContentArr);
     } catch (e) {
@@ -83,8 +85,8 @@ export class StorageExplorerController {
     }
   };
 
-  private readonly sendStream = (res: Response, controllerName: string, filePath: string): void => {
-    const { stream, contentType, size, name }: IStream = this.dirOperations.getJsonFileStream(filePath);
+  private readonly sendStream = async (res: Response, controllerName: string, filePath: string): Promise<void> => {
+    const { stream, contentType, size, name }: IStream = await this.dirOperations.getJsonFileStream(filePath);
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', size);
@@ -108,28 +110,32 @@ export class StorageExplorerController {
     }
 
     const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix);
-    const dirContentArray: IFile[] = directoryContent.map((entry) => {
-      const completePath = path.join(pathSuffix, entry.name);
-      const filePathEncrypted = encryptPath(completePath);
-      const parentPathEncrypted = encryptPath(pathSuffix);
-      const fileStats = statSync(completePath);
+    const pathsArr = directoryContent.map((entry) => path.join(pathSuffix, entry.name));
+    // console.log(pathsArr)
+    const encryptedPaths = encryptPath(pathsArr);
+    console.log(encryptedPaths);
 
-      const fileFromEntry: IFile = {
-        id: filePathEncrypted,
-        name: entry.name,
-        isDir: entry.isDirectory(),
-        parentId: parentPathEncrypted,
-        size: fileStats.size,
-        modDate: fileStats.mtime,
-      };
+    const dirContentArrayPromise = directoryContent.map(async (entry, i) => getDirContent(encryptedPaths[i], pathSuffix, entry));
 
-      if (fileFromEntry.isDir) {
-        delete fileFromEntry.size;
-      }
-
-      return fileFromEntry;
-    });
-
-    return dirContentArray;
+    return Promise.all(dirContentArrayPromise);
   };
 }
+
+const getDirContent = async (filePathEncrypted: string, parentPathEncrypted: string, entry: Dirent): Promise<IFile> => {
+  const fileStats = await statPromise(filePathEncrypted);
+
+  const fileFromEntry: IFile = {
+    id: filePathEncrypted,
+    name: entry.name,
+    isDir: entry.isDirectory(),
+    parentId: parentPathEncrypted,
+    size: fileStats.size,
+    modDate: fileStats.mtime,
+  };
+
+  if (fileFromEntry.isDir) {
+    delete fileFromEntry.size;
+  }
+
+  return fileFromEntry;
+};
