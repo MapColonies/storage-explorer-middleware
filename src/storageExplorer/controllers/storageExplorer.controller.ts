@@ -115,7 +115,7 @@ export class StorageExplorerController {
       const { name } = file;
       const fileExt = file.name.split('.')[1];
       if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
-        return (currentMountDir.includeFilesExt as string[]).includes(fileExt) || name === 'metadata.json';
+        return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
       }
 
       return true;
