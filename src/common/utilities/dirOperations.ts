@@ -1,11 +1,12 @@
 import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants } from 'fs';
-import { stat as statPromise, access as existsPromise } from 'fs/promises';
 import * as Path from 'path';
 import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
 import { ImountDirObj, IStream } from '../interfaces';
 import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
 import { encryptZlibPath } from '.';
+
+const { stat: statPromise, access: existsPromise } = fsPromises;
 
 enum StorageExplorerErrors {
   FILE_NOT_FOUND = 'fp.error.file_not_found',

@@ -1,13 +1,14 @@
 /* eslint-disable import/exports-last */
 import path from 'path';
-import { Dirent } from 'fs';
-import { stat as statPromise } from 'fs/promises';
+import { Dirent, promises as fsPromises } from 'fs';
 import { RequestHandler, Response } from 'express';
 import { InternalServerError } from '@map-colonies/error-types';
 import { DirOperations, encryptZlibPath, dencryptZlibPath } from '../../common/utilities';
 import { ImountDirObj, IStream } from '../../common/interfaces';
 import { LoggersHandler } from '../../common/utilities';
 import IFile from '../models/file.model';
+
+const { stat: statPromise } = fsPromises;
 
 // Should return file content by its id
 type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
