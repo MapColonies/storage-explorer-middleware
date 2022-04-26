@@ -85,8 +85,8 @@ describe('storage explorer dirOperations', () => {
       const dirPath = './MOCKS/3D_data/1b';
       const dirent = await dirOperations.getDirectoryContent(dirPath, getFilterUnsupportedExtFunction(dirPath));
       expect(dirent).toEqual(expect.arrayContaining<Dirent>(dirent));
-      expect(dirent[0]).toHaveProperty('name');
-      expect(dirent[0].name).toBe('metadata.json');
+      const hasMetadata = dirent.some((dir) => dir.name === 'metadata.json');
+      expect(hasMetadata).toBe(true);
     });
 
     it('should throw an error if dir not exists', async () => {
