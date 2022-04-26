@@ -30,10 +30,10 @@ describe('Storage Explorer', function () {
   ];
 
   beforeEach(function () {
-    logger = (console as unknown) as Record<string, unknown>;
+    logger = console as unknown as Record<string, unknown>;
     app.use(getStorageExplorerMiddleware(mountDirs, logger));
     requestSender = new StorageExplorerRequestSender(app);
-    dirOperaions = new DirOperations((logger as unknown) as LoggersHandler, mountDirs);
+    dirOperaions = new DirOperations(logger as unknown as LoggersHandler, mountDirs);
   });
 
   afterEach(() => {
@@ -44,15 +44,10 @@ describe('Storage Explorer', function () {
     describe('directory', () => {
       it('should return root dir and match snapshot from mock', async () => {
         const res = await requestSender.getDirectory('/');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return root dir when requested root traversal', async () => {
@@ -60,46 +55,31 @@ describe('Storage Explorer', function () {
         const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return data of inner directories', async () => {
         const res = await requestSender.getDirectory('/\\\\First_mount_dir');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(innerDirSnap);
+        expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return root dir by id and match snapshot from mock', async () => {
         const res = await requestSender.getDirectoryById('eJzTBwAAMAAw');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(rootDirSnap);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return data of inner directories by id', async () => {
         const res = await requestSender.getDirectoryById('eJzT0_f1d_YOBgAG0gHb');
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(innerDirSnap);
+        expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
     });
 
