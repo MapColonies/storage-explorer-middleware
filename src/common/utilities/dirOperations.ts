@@ -66,7 +66,7 @@ class DirOperations {
     return Promise.all(mountFilesArr);
   }
 
-  public async getDirectoryContent(path: PathLike): Promise<Dirent[]> {
+  public async getDirectoryContent(path: PathLike, filterFunc: (dirent: Dirent) => boolean): Promise<Dirent[]> {
     this.logger.info(`[DirOperations][getDirectoryContent] fetching directory of path ${path as string}`);
     const isDirExists = await this.checkFileExists(path);
 
@@ -79,8 +79,16 @@ class DirOperations {
     if (!isDir.isDirectory()) {
       throw new BadRequestError(StorageExplorerErrors.PATH_IS_NOT_DIR);
     }
+    const direntArr: Dirent[] = [];
+    const dirIterator = await fsPromises.opendir(path);
 
-    return fsPromises.readdir(path, { withFileTypes: true });
+    for await (const dirent of dirIterator) {
+      if (filterFunc(dirent)) {
+        direntArr.push(dirent);
+      }
+    }
+
+    return direntArr;
   }
 
   public async getJsonFileStream(path: PathLike): Promise<IStream> {

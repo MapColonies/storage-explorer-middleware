@@ -105,22 +105,24 @@ export class StorageExplorerController {
     });
   };
 
-  private readonly filterUnsupportedExt = (pathSuffix: string, files: Dirent[]): Dirent[] => {
+  private readonly getFilterUnsupportedExtFunction = (pathSuffix: string): ((dirent: Dirent) => boolean) => {
     const currentMountDir = this.mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
 
     if (typeof currentMountDir === 'undefined') {
-      return files;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return (_): boolean => true;
     }
 
-    return files.filter((file) => {
+    return (file): boolean => {
       const { name } = file;
       const fileExt = file.name.split('.')[1];
       if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
+        // eslint-disable-next-line
         return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
       }
 
       return true;
-    });
+    };
   };
 
   private readonly getFilesArray = async (pathSuffix: string): Promise<IFile[]> => {
@@ -128,10 +130,9 @@ export class StorageExplorerController {
       return this.dirOperations.generateRootDir();
     }
 
-    const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix);
-    const filteredDirContent = this.filterUnsupportedExt(pathSuffix, directoryContent);
+    const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix, this.getFilterUnsupportedExtFunction(pathSuffix));
     const encryptedParentPath = await encryptZlibPath(pathSuffix);
-    const dirContentArrayPromise = filteredDirContent.map(async (entry) => getFileData(pathSuffix, encryptedParentPath, entry));
+    const dirContentArrayPromise = directoryContent.map(async (entry) => getFileData(pathSuffix, encryptedParentPath, entry));
     const dirContentArr = await Promise.all(dirContentArrayPromise);
 
     return dirContentArr;
