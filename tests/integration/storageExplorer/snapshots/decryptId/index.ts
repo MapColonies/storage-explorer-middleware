@@ -1,1 +1,1 @@
-export const decryptedIdRes = { data: 'MOCKS/raster_data' };
+export const decryptedIdRes = { data: './MOCKS' };

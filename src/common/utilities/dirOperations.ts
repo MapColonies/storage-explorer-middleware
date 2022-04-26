@@ -5,7 +5,7 @@ import { BadRequestError, NotFoundError, InternalServerError } from '@map-coloni
 import { ImountDirObj, IStream } from '../interfaces';
 import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
-import { encryptPath } from '.';
+import { encryptZlibPath } from '.';
 
 enum StorageExplorerErrors {
   FILE_NOT_FOUND = 'fp.error.file_not_found',
@@ -48,12 +48,14 @@ class DirOperations {
 
     const mountFilesArr = mountDirectories.map(async (mountDir) => {
       const dirStats = await statPromise(mountDir.physical);
+      const encryptedId = await encryptZlibPath(mountDir.physical);
+      const encryptedParentId = await encryptZlibPath('/');
 
       const fileFromMountDir: IFile = {
-        id: encryptPath([mountDir.physical])[0],
+        id: encryptedId,
         name: mountDir.displayName,
         isDir: true,
-        parentId: encryptPath(['/'])[0],
+        parentId: encryptedParentId,
         modDate: dirStats.mtime,
       };
 

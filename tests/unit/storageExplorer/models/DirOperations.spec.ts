@@ -98,26 +98,26 @@ describe('storage explorer dirOperations', () => {
       expect(JSON.parse(fileContent)).toMatchObject(fileStreamSnap);
     });
 
-    it('should throw an error if file not exists', () => {
+    it('should throw an error if file not exists', async () => {
       const notExistsPath = './MOCKS/3D_data/1b/product_not_exist.json';
 
       const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(notExistsPath);
       };
 
-      expect(fileStreamError).toThrow(NotFoundError);
-      expect(fileStreamError).toThrow('fp.error.file_not_found');
+      await expect(fileStreamError).rejects.toThrow(NotFoundError);
+      await expect(fileStreamError).rejects.toThrow('fp.error.file_not_found');
     });
 
-    it('should throw an error if path is not a JSON file', () => {
+    it('should throw an error if path is not a JSON file', async () => {
       const nonJsonPath = './MOCKS/3D_data/1b/text.txt';
 
       const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(nonJsonPath);
       };
 
-      expect(fileStreamError).toThrow(BadRequestError);
-      expect(fileStreamError).toThrow('fp.error.file_not_supported');
+      await expect(fileStreamError).rejects.toThrow(BadRequestError);
+      await expect(fileStreamError).rejects.toThrow('fp.error.file_not_supported');
     });
   });
 });
