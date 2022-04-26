@@ -104,6 +104,24 @@ export class StorageExplorerController {
     });
   };
 
+  private readonly filterUnsupportedExt = (pathSuffix: string, files: IFile[]): IFile[] => {
+    const currentMountDir = this.mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
+
+    if (typeof currentMountDir === 'undefined') {
+      return files;
+    }
+
+    return files.filter((file) => {
+      const { name } = file;
+      const fileExt = file.name.split('.')[1];
+      if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDir) {
+        return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
+      }
+
+      return true;
+    });
+  };
+
   private readonly getFilesArray = async (pathSuffix: string): Promise<IFile[]> => {
     if (pathSuffix === '/') {
       return this.dirOperations.generateRootDir();

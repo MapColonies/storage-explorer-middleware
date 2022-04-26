@@ -1,0 +1,146 @@
+openapi: 3.0.1
+info:
+  title: storage-explorer
+  description: Service to reflect folders stractures on server.
+  version: 1.0.0
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+paths:
+  /explorer/directory:
+    get:
+      summary: Gets directory content
+      parameters:
+        - in: query
+          name: pathSuffix
+          schema:
+            type: string
+          description: Requested directory path suffix.
+          allowReserved: true
+          required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /explorer/directorybyid:
+    get:
+      summary: Gets directory content by id.
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: Requested directory id.
+          allowReserved: true
+          required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /explorer/file:
+    get:
+      summary: Gets file content
+      parameters:
+        - in: query
+          name: pathSuffix
+          schema:
+            type: string
+          description: Requested file path suffix.
+          allowReserved: true
+          required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /explorer/filebyid:
+    get:
+      summary: Gets file content by encrypted id
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: Requested file id.
+          allowReserved: true
+          required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+
+  /explorer/decryptid:
+    get:
+      summary: Get decrypted id
+      parameters:
+        - in: query
+          name: id
+          schema:
+            type: string
+          description: id to decrypt.
+          allowReserved: true
+          required: true
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+components:
+  schemas:
+    res:
+      type: object
+      properties:
+        data:
+          type: object
+    error:
+      type: object
+      properties:
+        error:
+          type: string

@@ -10,4 +10,5 @@ export interface IStream {
 export interface ImountDirObj {
   physical: string;
   displayName: string;
+  includeFilesExt?: string[];
 }
