@@ -1,43 +1,43 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 export const rootDirSnap = [
   {
-    id: '7JtPOli87ygL..X4xb_1Nw--',
-    isDir: true,
+    id: 'eJzT0_f1d_YOBgAG0gHb',
     name: '\\First_mount_dir',
-    parentId: '4dt.yTVSoCcyvIqAxvCeeA--',
+    isDir: true,
+    parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'Zjio5CfUrRlIIBpFrNptSg--',
-    isDir: true,
+    id: 'eJzT0_f1d_YOjjcCAAt4Amw-',
     name: '\\Second_mount_dir',
-    parentId: '4dt.yTVSoCcyvIqAxvCeeA--',
+    isDir: true,
+    parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'a4L_eZaHNVHkqOG25hUhPA--',
-    isDir: true,
+    id: 'eJzT0_f1d_YOjjcGAAt5Am0-',
     name: '\\Third_mount_dir',
-    parentId: '4dt.yTVSoCcyvIqAxvCeeA--',
+    isDir: true,
+    parentId: 'eJzTBwAAMAAw',
   },
 ];
 
 export const innerDirSnap = [
   {
-    id: '5rsK5Yb3mP02eL1a0mW4WQ--',
+    id: 'eJzz9Xf2DtY3dolPSSxJBAAasAQd',
     name: '3D_data',
     isDir: true,
-    parentId: '7JtPOli87ygL..X4xb_1Nw--',
+    parentId: 'eJzT0_f1d_YOBgAG0gHb',
   },
   {
-    id: 'IrGIWn9rTrD77HKJZ.u59qkBpzrcByXx7URL.z0PoD0-',
+    id: 'eJzz9Xf2DtYvSiwuSS2KT0ksSQQANDEGNw--',
     name: 'raster_data',
     isDir: true,
-    parentId: '7JtPOli87ygL..X4xb_1Nw--',
+    parentId: 'eJzT0_f1d_YOBgAG0gHb',
   },
   {
-    id: '84fNqOa9pZlrhnhUswBQqA--',
+    id: 'eJzz9Xf2DtYvSS0u0SvJTAMAIi4E3g--',
     name: 'test.tif',
     isDir: false,
-    parentId: '7JtPOli87ygL..X4xb_1Nw--',
-    size: 0,
+    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    size: 4096,
   },
 ];

@@ -1,17 +1,17 @@
-import { decryptPath, encryptPath } from '../../../../src/common/utilities';
+import { dencryptZlibPath, encryptZlibPath } from '../../../../src/common/utilities';
 
 describe('storage explorer cryptoUtils', () => {
   const path = '/\\\\First_mount_dir/3D_data/1b/product.json';
-  const hash = 'Shva6gKIRQuhrtRWmPPg1dMOL5P4Cl8zr35J.PQwY0ynINBVB6gIaMkF3wl1GE8Q';
+  const hash = 'eJzTj4lxyywqLonPzS_NK4lPySzSN3aJT0ksSdQ3TNIvKMpPKU0u0csqzs8DAE1ZD5k-';
 
   describe('#encryptPath', () => {
-    it('should return url-safe encrypted path', () => {
-      const encrypted = encryptPath(path);
+    it('should return url-safe encrypted path', async () => {
+      const encrypted = await encryptZlibPath(path);
       expect(encrypted).toBe(hash);
     });
 
-    it('should return decrypted path', () => {
-      const decrypted = decryptPath(hash);
+    it('should return decrypted path', async () => {
+      const decrypted = await dencryptZlibPath(hash);
       expect(decrypted).toBe(path);
     });
   });

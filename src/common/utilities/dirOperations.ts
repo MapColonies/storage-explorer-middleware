@@ -1,10 +1,12 @@
-import { promises as fsPromises, Dirent, PathLike, createReadStream, statSync, existsSync } from 'fs';
+import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants } from 'fs';
 import * as Path from 'path';
 import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
 import { ImountDirObj, IStream } from '../interfaces';
 import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
-import { encryptPath } from '.';
+import { encryptZlibPath } from '.';
+
+const { stat: statPromise, access: existsPromise } = fsPromises;
 
 enum StorageExplorerErrors {
   FILE_NOT_FOUND = 'fp.error.file_not_found',
@@ -41,47 +43,57 @@ class DirOperations {
     return safePath;
   }
 
-  public generateRootDir(): IFile[] {
+  public async generateRootDir(): Promise<IFile[]> {
     this.logger.info('[DirOperations][generateRootDir] generating mounts root dir');
     const mountDirectories = this.mountDirs;
 
-    const mountFilesArr = mountDirectories.map((mountDir) => {
-      const dirStats = statSync(mountDir.physical);
+    const mountFilesArr = mountDirectories.map(async (mountDir) => {
+      const dirStats = await statPromise(mountDir.physical);
+      const encryptedId = await encryptZlibPath(mountDir.physical);
+      const encryptedParentId = await encryptZlibPath('/');
 
       const fileFromMountDir: IFile = {
-        id: encryptPath(mountDir.physical),
+        id: encryptedId,
         name: mountDir.displayName,
         isDir: true,
-        parentId: encryptPath('/'),
+        parentId: encryptedParentId,
         modDate: dirStats.mtime,
       };
 
       return fileFromMountDir;
     });
 
-    return mountFilesArr;
+    return Promise.all(mountFilesArr);
   }
 
-  public async getDirectoryContent(path: PathLike): Promise<Dirent[]> {
+  public async getDirectoryContent(path: PathLike, filterFunc: (dirent: Dirent) => boolean): Promise<Dirent[]> {
     this.logger.info(`[DirOperations][getDirectoryContent] fetching directory of path ${path as string}`);
-    const isDirExists = existsSync(path);
+    const isDirExists = await this.checkFileExists(path);
 
     if (!isDirExists) {
       throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
     }
 
-    const isDir = statSync(path).isDirectory();
+    const isDir = await statPromise(path);
 
-    if (!isDir) {
+    if (!isDir.isDirectory()) {
       throw new BadRequestError(StorageExplorerErrors.PATH_IS_NOT_DIR);
     }
+    const direntArr: Dirent[] = [];
+    const dirIterator = await fsPromises.opendir(path);
 
-    return fsPromises.readdir(path, { withFileTypes: true });
+    for await (const dirent of dirIterator) {
+      if (filterFunc(dirent)) {
+        direntArr.push(dirent);
+      }
+    }
+
+    return direntArr;
   }
 
-  public getJsonFileStream(path: PathLike): IStream {
+  public async getJsonFileStream(path: PathLike): Promise<IStream> {
     this.logger.info(`[DirOperations][getJsonFileStream] fetching file at path ${path as string}`);
-    const isFileExists = existsSync(path);
+    const isFileExists = await this.checkFileExists(path);
 
     if (!isFileExists) {
       throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
@@ -95,7 +107,7 @@ class DirOperations {
 
     try {
       const stream = createReadStream(path);
-      const { size } = statSync(path);
+      const { size } = await statPromise(path);
       const fileName = Path.basename(path as string);
 
       const streamProduct: IStream = {
@@ -110,6 +122,12 @@ class DirOperations {
       this.logger.error(`[DirOperations][getJsonFileStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
       throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
     }
+  }
+
+  private async checkFileExists(file: PathLike): Promise<boolean> {
+    return existsPromise(file, fsConstants.F_OK)
+      .then(() => true)
+      .catch(() => false);
   }
 }
 

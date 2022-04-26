@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 import httpStatusCodes from 'http-status-codes';
-import { DirOperations, encryptPath } from '../../../src/common/utilities';
+import { DirOperations, encryptZlibPath } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
 import { LoggersHandler } from '../../../src/common/utilities';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
@@ -37,22 +37,17 @@ describe('Storage Explorer', function () {
   });
 
   afterEach(() => {
-    afterEach(() => server.close());
+    server.close();
   });
 
   describe('given valid params', () => {
     describe('directory', () => {
       it('should return root dir and match snapshot from mock', async () => {
         const res = await requestSender.getDirectory('/');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return root dir when requested root traversal', async () => {
@@ -60,46 +55,31 @@ describe('Storage Explorer', function () {
         const body = res.body as IFile[];
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return data of inner directories', async () => {
         const res = await requestSender.getDirectory('/\\\\First_mount_dir');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(innerDirSnap);
+        expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return root dir by id and match snapshot from mock', async () => {
-        const res = await requestSender.getDirectoryById('4dt.yTVSoCcyvIqAxvCeeA--');
-        const body = res.body as IFile[];
+        const res = await requestSender.getDirectoryById('eJzTBwAAMAAw');
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(rootDirSnap);
-        expect(
-          body.map((item) => {
-            const { modDate, ...rest } = item;
-            return rest;
-          })
-        ).toMatchObject(rootDirSnap);
+        expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
 
       it('should return data of inner directories by id', async () => {
-        const res = await requestSender.getDirectoryById('7JtPOli87ygL..X4xb_1Nw--');
+        const res = await requestSender.getDirectoryById('eJzT0_f1d_YOBgAG0gHb');
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(innerDirSnap);
+        expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
       });
     });
 
@@ -113,7 +93,7 @@ describe('Storage Explorer', function () {
 
       it('should return file content by id and match snapshot from mock', async () => {
         const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/product.json');
-        const encryptedNotJsonPath = encryptPath(physicalPath);
+        const encryptedNotJsonPath = await encryptZlibPath(physicalPath);
         const res = await requestSender.getFileById(encryptedNotJsonPath);
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
@@ -123,7 +103,7 @@ describe('Storage Explorer', function () {
 
     describe('decryptId', () => {
       it('should return the correct decrypted path', async () => {
-        const directoryId = 'IrGIWn9rTrD77HKJZ.u59qkBpzrcByXx7URL.z0PoD0-';
+        const directoryId = 'eJzT0_f1d_YOBgAG0gHb';
         const res = await requestSender.getDecryptedId(directoryId);
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
@@ -184,7 +164,7 @@ describe('Storage Explorer', function () {
 
       it('should return 400 if file is not a JSON', async () => {
         const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/text.txt');
-        const encryptedNotJsonPath = encryptPath(physicalPath);
+        const encryptedNotJsonPath = await encryptZlibPath(physicalPath);
         const { status } = await requestSender.getFileById(encryptedNotJsonPath);
         expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });

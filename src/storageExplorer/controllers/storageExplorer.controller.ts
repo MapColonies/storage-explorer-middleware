@@ -1,11 +1,14 @@
+/* eslint-disable import/exports-last */
 import path from 'path';
-import { statSync } from 'fs';
+import { Dirent, promises as fsPromises } from 'fs';
 import { RequestHandler, Response } from 'express';
 import { InternalServerError } from '@map-colonies/error-types';
-import IFile from '../models/file.model';
-import { decryptPath, DirOperations, encryptPath } from '../../common/utilities';
+import { DirOperations, encryptZlibPath, dencryptZlibPath } from '../../common/utilities';
 import { ImountDirObj, IStream } from '../../common/interfaces';
 import { LoggersHandler } from '../../common/utilities';
+import IFile from '../models/file.model';
+
+const { stat: statPromise } = fsPromises;
 
 // Should return file content by its id
 type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
@@ -29,31 +32,31 @@ export class StorageExplorerController {
     private readonly dirOperations: DirOperations = new DirOperations(logger, mountDirs)
   ) {}
 
-  public getFile: GetFileHandler = (req, res, next) => {
+  public getFile: GetFileHandler = async (req, res, next) => {
     try {
       const pathSuffix: string = this.dirOperations.getPhysicalPath(req.query.pathSuffix);
       const filePath = pathSuffix;
-      this.sendStream(res, 'getFile', filePath);
+      await this.sendStream(res, 'getFile', filePath);
     } catch (e) {
       next(e);
     }
   };
 
-  public getFileById: GetFileByIdHandler = (req, res, next) => {
+  public getFileById: GetFileByIdHandler = async (req, res, next) => {
     try {
       const fileId: string = req.query.id;
-      const pathDecrypted = decryptPath(fileId);
-      this.sendStream(res, 'getFileById', pathDecrypted);
+      const pathDecrypted = await dencryptZlibPath(fileId);
+      await this.sendStream(res, 'getFileById', pathDecrypted);
     } catch (e) {
       next(e);
     }
   };
 
-  public decryptId: DecryptIdHandler = (req, res, next) => {
+  public decryptId: DecryptIdHandler = async (req, res, next) => {
     try {
       const encryptedId: string = req.query.id;
       this.logger.info(`[StorageExplorerController][decryptId] decrypting id: "${encryptedId}"`);
-      const pathDecrypted = decryptPath(encryptedId);
+      const pathDecrypted = await dencryptZlibPath(encryptedId);
       res.send({ data: pathDecrypted });
     } catch (e) {
       next(e);
@@ -74,7 +77,7 @@ export class StorageExplorerController {
   public getdirectoryById: GetDirectoryByIdHandler = async (req, res, next) => {
     try {
       const dirId: string = req.query.id;
-      const decryptedPathId = decryptPath(dirId);
+      const decryptedPathId = await dencryptZlibPath(dirId);
       const dirContentArr = await this.getFilesArray(decryptedPathId);
 
       res.send(dirContentArr);
@@ -83,8 +86,8 @@ export class StorageExplorerController {
     }
   };
 
-  private readonly sendStream = (res: Response, controllerName: string, filePath: string): void => {
-    const { stream, contentType, size, name }: IStream = this.dirOperations.getJsonFileStream(filePath);
+  private readonly sendStream = async (res: Response, controllerName: string, filePath: string): Promise<void> => {
+    const { stream, contentType, size, name }: IStream = await this.dirOperations.getJsonFileStream(filePath);
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', size);
@@ -102,22 +105,24 @@ export class StorageExplorerController {
     });
   };
 
-  private readonly filterUnsupportedExt = (pathSuffix: string, files: IFile[]): IFile[] => {
+  private readonly getFilterUnsupportedExtFunction = (pathSuffix: string): ((dirent: Dirent) => boolean) => {
     const currentMountDir = this.mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
 
     if (typeof currentMountDir === 'undefined') {
-      return files;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      return (_): boolean => true;
     }
 
-    return files.filter((file) => {
+    return (file): boolean => {
       const { name } = file;
       const fileExt = file.name.split('.')[1];
-      if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDir) {
+      if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
+        // eslint-disable-next-line
         return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
       }
 
       return true;
-    });
+    };
   };
 
   private readonly getFilesArray = async (pathSuffix: string): Promise<IFile[]> => {
@@ -125,29 +130,31 @@ export class StorageExplorerController {
       return this.dirOperations.generateRootDir();
     }
 
-    const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix);
-    const dirContentArray: IFile[] = directoryContent.map((entry) => {
-      const completePath = path.join(pathSuffix, entry.name);
-      const filePathEncrypted = encryptPath(completePath);
-      const parentPathEncrypted = encryptPath(pathSuffix);
-      const fileStats = statSync(completePath);
+    const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix, this.getFilterUnsupportedExtFunction(pathSuffix));
+    const encryptedParentPath = await encryptZlibPath(pathSuffix);
+    const dirContentArrayPromise = directoryContent.map(async (entry) => getFileData(pathSuffix, encryptedParentPath, entry));
+    const dirContentArr = await Promise.all(dirContentArrayPromise);
 
-      const fileFromEntry: IFile = {
-        id: filePathEncrypted,
-        name: entry.name,
-        isDir: entry.isDirectory(),
-        parentId: parentPathEncrypted,
-        size: fileStats.size,
-        modDate: fileStats.mtime,
-      };
-
-      if (fileFromEntry.isDir) {
-        delete fileFromEntry.size;
-      }
-
-      return fileFromEntry;
-    });
-
-    return this.filterUnsupportedExt(pathSuffix, dirContentArray);
+    return dirContentArr;
   };
 }
+
+const getFileData = async (filePath: string, parentPathEncrypted: string, entry: Dirent): Promise<IFile> => {
+  const fileStats = await statPromise(filePath);
+  const encryptedPath = await encryptZlibPath(path.join(filePath, entry.name));
+
+  const fileFromEntry: IFile = {
+    id: encryptedPath,
+    name: entry.name,
+    isDir: entry.isDirectory(),
+    parentId: parentPathEncrypted,
+    size: fileStats.size,
+    modDate: fileStats.mtime,
+  };
+
+  if (fileFromEntry.isDir) {
+    delete fileFromEntry.size;
+  }
+
+  return fileFromEntry;
+};

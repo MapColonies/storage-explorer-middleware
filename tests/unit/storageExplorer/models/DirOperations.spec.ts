@@ -2,12 +2,13 @@ import { Dirent, ReadStream } from 'fs';
 import { BadRequestError, NotFoundError } from '@map-colonies/error-types';
 import { DirOperations } from '../../../../src/common/utilities';
 import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler';
+import { ImountDirObj } from '../../../../src';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
 
 let dirOperations: DirOperations;
 let logger;
-const mountDirs = [
+const mountDirs: ImountDirObj[] = [
   {
     physical: './MOCKS',
     displayName: '\\First_mount_dir',
@@ -21,6 +22,26 @@ const mountDirs = [
     displayName: '\\Third_mount_dir',
   },
 ];
+
+const getFilterUnsupportedExtFunction = (pathSuffix: string): ((dirent: Dirent) => boolean) => {
+  const currentMountDir = mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
+
+  if (typeof currentMountDir === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return (_): boolean => true;
+  }
+
+  return (file): boolean => {
+    const { name } = file;
+    const fileExt = file.name.split('.')[1];
+    if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
+      // eslint-disable-next-line
+      return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
+    }
+
+    return true;
+  };
+};
 
 describe('storage explorer dirOperations', () => {
   beforeEach(function () {
@@ -48,8 +69,9 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#generateRootDir', () => {
-    it('should return "virtual" root dir with all mountDirs from config', () => {
-      const rootDir = dirOperations.generateRootDir().map((item) => {
+    it('should return "virtual" root dir with all mountDirs from config', async () => {
+      const generatedRootDirs = await dirOperations.generateRootDir();
+      const rootDir = generatedRootDirs.map((item) => {
         const { modDate, ...rest } = item;
         return rest;
       });
@@ -61,31 +83,35 @@ describe('storage explorer dirOperations', () => {
   describe('#getDirectoryContent', () => {
     it('should return Dirent content', async () => {
       const dirPath = './MOCKS/3D_data/1b';
-      const dirent = await dirOperations.getDirectoryContent(dirPath);
+      const dirent = await dirOperations.getDirectoryContent(dirPath, getFilterUnsupportedExtFunction(dirPath));
       expect(dirent).toEqual(expect.arrayContaining<Dirent>(dirent));
-      expect(dirent[0]).toHaveProperty('name');
-      expect(dirent[0].name).toBe('metadata.json');
+      const hasMetadata = dirent.some((dir) => dir.name === 'metadata.json');
+      expect(hasMetadata).toBe(true);
     });
 
     it('should throw an error if dir not exists', async () => {
       const notExistsPath = './MOCKS/3D_data/1b/3b';
 
-      await expect(dirOperations.getDirectoryContent(notExistsPath)).rejects.toThrow(NotFoundError);
-      await expect(dirOperations.getDirectoryContent(notExistsPath)).rejects.toThrow('fp.error.file_not_found');
+      await expect(dirOperations.getDirectoryContent(notExistsPath, getFilterUnsupportedExtFunction(notExistsPath))).rejects.toThrow(NotFoundError);
+      await expect(dirOperations.getDirectoryContent(notExistsPath, getFilterUnsupportedExtFunction(notExistsPath))).rejects.toThrow(
+        'fp.error.file_not_found'
+      );
     });
 
     it('should throw an error if path is not a dir', async () => {
       const filePath = './MOCKS/3D_data/1b/metadata.json';
 
-      await expect(dirOperations.getDirectoryContent(filePath)).rejects.toThrow(BadRequestError);
-      await expect(dirOperations.getDirectoryContent(filePath)).rejects.toThrow('fp.error.path_is_not_dir');
+      await expect(dirOperations.getDirectoryContent(filePath, getFilterUnsupportedExtFunction(filePath))).rejects.toThrow(BadRequestError);
+      await expect(dirOperations.getDirectoryContent(filePath, getFilterUnsupportedExtFunction(filePath))).rejects.toThrow(
+        'fp.error.path_is_not_dir'
+      );
     });
   });
 
   describe('#getJsonFileStream', () => {
     it('should return IStream object with file content as a ReadStream', async () => {
       const filePath = './MOCKS/3D_data/1b/product.json';
-      const fileStream = dirOperations.getJsonFileStream(filePath);
+      const fileStream = await dirOperations.getJsonFileStream(filePath);
 
       expect(fileStream).toHaveProperty('stream');
       expect(fileStream).toHaveProperty('contentType');
@@ -97,26 +123,26 @@ describe('storage explorer dirOperations', () => {
       expect(JSON.parse(fileContent)).toMatchObject(fileStreamSnap);
     });
 
-    it('should throw an error if file not exists', () => {
+    it('should throw an error if file not exists', async () => {
       const notExistsPath = './MOCKS/3D_data/1b/product_not_exist.json';
 
-      const fileStreamError = () => {
+      const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(notExistsPath);
       };
 
-      expect(fileStreamError).toThrow(NotFoundError);
-      expect(fileStreamError).toThrow('fp.error.file_not_found');
+      await expect(fileStreamError).rejects.toThrow(NotFoundError);
+      await expect(fileStreamError).rejects.toThrow('fp.error.file_not_found');
     });
 
-    it('should throw an error if path is not a JSON file', () => {
+    it('should throw an error if path is not a JSON file', async () => {
       const nonJsonPath = './MOCKS/3D_data/1b/text.txt';
 
-      const fileStreamError = () => {
+      const fileStreamError = async () => {
         return dirOperations.getJsonFileStream(nonJsonPath);
       };
 
-      expect(fileStreamError).toThrow(BadRequestError);
-      expect(fileStreamError).toThrow('fp.error.file_not_supported');
+      await expect(fileStreamError).rejects.toThrow(BadRequestError);
+      await expect(fileStreamError).rejects.toThrow('fp.error.file_not_supported');
     });
   });
 });
