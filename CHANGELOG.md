@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.5](https://github.com/MapColonies/storage-explorer-middleware/compare/v1.2.4...v1.2.5) (2022-08-24)
+
+
+### Bug Fixes
+
+* file sizes refers to directory instead of file MAPCO-2451 ([3330c5c](https://github.com/MapColonies/storage-explorer-middleware/commit/3330c5c8074d77709c7cc3f9b4bb93af1e2ee2b2))
+
 ### 1.2.4 (2022-04-26)
 
 ### [1.2.3](https://github.com/MapColonies/storage-explorer-middleware/compare/v1.2.2...v1.2.3) (2022-04-26)
