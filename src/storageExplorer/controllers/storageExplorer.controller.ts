@@ -140,7 +140,7 @@ export class StorageExplorerController {
 }
 
 const getFileData = async (filePath: string, parentPathEncrypted: string, entry: Dirent): Promise<IFile> => {
-  const fileStats = await statPromise(filePath);
+  const fileStats = await statPromise(path.join(filePath, entry.name));
   const encryptedPath = await encryptZlibPath(path.join(filePath, entry.name));
 
   const fileFromEntry: IFile = {

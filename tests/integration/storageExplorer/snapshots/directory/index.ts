@@ -38,6 +38,6 @@ export const innerDirSnap = [
     name: 'test.tif',
     isDir: false,
     parentId: 'eJzT0_f1d_YOBgAG0gHb',
-    size: 4096,
+    size: 100318,
   },
 ];
