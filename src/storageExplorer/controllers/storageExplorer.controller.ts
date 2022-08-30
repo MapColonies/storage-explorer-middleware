@@ -115,9 +115,9 @@ export class StorageExplorerController {
 
     return (file): boolean => {
       const { name } = file;
-      const fileExt = file.name.split('.')[1];
+      const fileExtSplit = file.name.split('.');
+      const fileExt = fileExtSplit[fileExtSplit.length - 1];
       if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
-        // eslint-disable-next-line
         return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
       }
 

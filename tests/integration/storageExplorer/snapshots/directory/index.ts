@@ -40,4 +40,11 @@ export const innerDirSnap = [
     parentId: 'eJzT0_f1d_YOBgAG0gHb',
     size: 100318,
   },
+  {
+    id: 'eJzz9Xf2DtYvSS0uMdIDkZl56XqGegZAWJKZBgCOzwlX',
+    name: 'test2.testing.1.0.0.tif',
+    isDir: false,
+    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    size: 0,
+  },
 ];
