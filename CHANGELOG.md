@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.7](https://github.com/MapColonies/storage-explorer-middleware/compare/v1.2.6...v1.2.7) (2022-08-30)
+
+
+### Bug Fixes
+
+* file names with multi periods wrong extension filter MAPCO-2480 ([6bb21bb](https://github.com/MapColonies/storage-explorer-middleware/commit/6bb21bb37f1314aad664126e22ae5b81ae2569dc))
+
 ### 1.2.6 (2022-08-24)
 
 ### [1.2.5](https://github.com/MapColonies/storage-explorer-middleware/compare/v1.2.4...v1.2.5) (2022-08-24)
