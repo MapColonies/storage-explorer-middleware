@@ -6,7 +6,8 @@ const storageExplorerRouter = (controller: StorageExplorerController): Router =>
 
   router.get('/directory', controller.getDirectory);
   router.get('/directorybyid', controller.getdirectoryById);
-  router.get('/file', controller.getFile);
+  router.get('/file', controller.getStreamFile);
+  router.post('/uploadfile', controller.writeStreamFile);
   router.get('/filebyid', controller.getFileById);
   router.get('/decryptid', controller.decryptId);
 

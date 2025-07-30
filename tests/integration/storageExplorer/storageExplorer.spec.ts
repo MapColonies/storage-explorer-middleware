@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
+import { constants, unlink, promises } from 'fs';
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptZlibPath } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
@@ -85,7 +86,14 @@ describe('Storage Explorer', function () {
 
     describe('file', () => {
       it('should return file content and match snapshot from mock', async () => {
-        const res = await requestSender.getFile('/\\\\First_mount_dir/3D_data/1b/product.json');
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json');
+        expect(res.type).toBe('application/json');
+        expect(res.status).toBe(httpStatusCodes.OK);
+        expect(res.body).toMatchObject(fileData);
+      });
+
+      it('add buffer size should return 200', async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json', '1000000');
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res.body).toMatchObject(fileData);
@@ -98,6 +106,47 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res.body).toMatchObject(fileData);
+      });
+
+      it('should return 200 for a MIME text file', async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/text.txt');
+        expect(res.type).toBe('text/plain');
+        expect(res.status).toBe(httpStatusCodes.OK);
+      });
+
+      it('should return 200 for a MIME ZIP file', async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip');
+        expect(res.type).toBe('application/zip');
+        expect(res.status).toBe(httpStatusCodes.OK);
+      });
+    });
+
+    describe('uploadFile', () => {
+      it('should write a new file', async () => {
+        const res = await requestSender.writeStreamFile('/\\\\Second_mount_dir/zipFile.zip');
+        expect(res.status).toBe(httpStatusCodes.CREATED);
+
+        let isFileExist = false;
+
+        try {
+          await promises.access('./MOCKS_2/zipFile.zip', constants.F_OK);
+          isFileExist = true;
+        } catch {
+          isFileExist = false;
+        }
+
+        expect(isFileExist).toBe(true);
+
+        unlink('./MOCKS_2/zipFile.zip', () => {
+          console.log('Delete file successfully');
+        });
+      });
+
+      it(`should return the file content when file extension is missing`, async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/textFileWithoutSuffix');
+        expect(res.text).toBe('just a file'); // Ask If Should Put It In Seperated File
+        expect(res.headers.contentType).toBe(undefined);
+        expect(res.status).toBe(httpStatusCodes.OK);
       });
     });
 
@@ -138,14 +187,9 @@ describe('Storage Explorer', function () {
     });
 
     describe('file', () => {
-      it('should return 400 if path not found', async () => {
-        const { status } = await requestSender.getFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
+      it('should return 404 if path not found', async () => {
+        const { status } = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
         expect(status).toBe(httpStatusCodes.NOT_FOUND);
-      });
-
-      it('should return 400 if file is not a JSON', async () => {
-        const { status } = await requestSender.getFile('/\\\\First_mount_dir/3D_data/1b/text.txt');
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 
       it('should return 500 if required query not provided', async () => {
@@ -154,19 +198,17 @@ describe('Storage Explorer', function () {
         // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
         expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
       });
+
+      it('should return 400 if buffer size in not a number', async () => {
+        const { status } = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+      });
     });
 
     describe('file by id', () => {
       it('should return 500 if id is not valid', async () => {
         const { status } = await requestSender.getFileById('iYl0xZ28wqXUIZ_pP_XU0v0i0EhFUpjD1QzJQsD7hO9.dPkcbmbb4pbPjUyek6');
         expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
-      });
-
-      it('should return 400 if file is not a JSON', async () => {
-        const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/text.txt');
-        const encryptedNotJsonPath = await encryptZlibPath(physicalPath);
-        const { status } = await requestSender.getFileById(encryptedNotJsonPath);
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 
       it('should return 500 if required query not provided', async () => {

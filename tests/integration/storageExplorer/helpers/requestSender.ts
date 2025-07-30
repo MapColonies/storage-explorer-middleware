@@ -1,3 +1,4 @@
+import path from 'path';
 import * as supertest from 'supertest';
 
 export class StorageExplorerRequestSender {
@@ -12,11 +13,17 @@ export class StorageExplorerRequestSender {
   }
 
   public async getDirectoryWithoutQuery(): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/directory`).set('Content-Type', 'application/json');
+    return supertest.agent(this.app).get(`/explorer/directory`);
   }
 
-  public async getFile(pathSuffix: string): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/file?pathSuffix=${pathSuffix}`).set('Content-Type', 'application/json');
+  public async getStreamFile(pathSuffix: string, bufferSize?: string): Promise<supertest.Response> {
+    const bufferQuery = bufferSize !== undefined ? `&bufferSize=${bufferSize}` : '';
+    return supertest.agent(this.app).get(`/explorer/file?pathSuffix=${pathSuffix}${bufferQuery}`);
+  }
+
+  public async writeStreamFile(pathSuffix: string): Promise<supertest.Response> {
+    const filePath = path.resolve(__dirname, '../../../../MOCKS/zipFile.zip');
+    return supertest.agent(this.app).post(`/explorer/uploadfile?pathSuffix=${pathSuffix}`).attach('file', filePath, 'newUploadedFile');
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

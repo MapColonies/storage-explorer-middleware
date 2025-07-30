@@ -111,7 +111,7 @@ describe('storage explorer dirOperations', () => {
   describe('#getJsonFileStream', () => {
     it('should return IStream object with file content as a ReadStream', async () => {
       const filePath = './MOCKS/3D_data/1b/product.json';
-      const fileStream = await dirOperations.getJsonFileStream(filePath);
+      const fileStream = await dirOperations.getReadStream(filePath);
 
       expect(fileStream).toHaveProperty('stream');
       expect(fileStream).toHaveProperty('contentType');
@@ -127,22 +127,11 @@ describe('storage explorer dirOperations', () => {
       const notExistsPath = './MOCKS/3D_data/1b/product_not_exist.json';
 
       const fileStreamError = async () => {
-        return dirOperations.getJsonFileStream(notExistsPath);
+        return dirOperations.getReadStream(notExistsPath);
       };
 
       await expect(fileStreamError).rejects.toThrow(NotFoundError);
       await expect(fileStreamError).rejects.toThrow('fp.error.file_not_found');
-    });
-
-    it('should throw an error if path is not a JSON file', async () => {
-      const nonJsonPath = './MOCKS/3D_data/1b/text.txt';
-
-      const fileStreamError = async () => {
-        return dirOperations.getJsonFileStream(nonJsonPath);
-      };
-
-      await expect(fileStreamError).rejects.toThrow(BadRequestError);
-      await expect(fileStreamError).rejects.toThrow('fp.error.file_not_supported');
     });
   });
 });

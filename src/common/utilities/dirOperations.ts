@@ -1,7 +1,8 @@
-import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants } from 'fs';
+import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream } from 'fs';
 import * as Path from 'path';
+import { lookup } from '@map-colonies/types';
 import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
-import { ImountDirObj, IStream } from '../interfaces';
+import { ImountDirObj, IReadStream, IWriteStream } from '../interfaces';
 import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
 import { encryptZlibPath } from '.';
@@ -91,7 +92,7 @@ class DirOperations {
     return direntArr;
   }
 
-  public async getJsonFileStream(path: PathLike): Promise<IStream> {
+  public async getReadStream(path: PathLike, bufferSize?: number): Promise<IReadStream> {
     this.logger.info(`[DirOperations][getJsonFileStream] fetching file at path ${path as string}`);
     const isFileExists = await this.checkFileExists(path);
 
@@ -99,20 +100,21 @@ class DirOperations {
       throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
     }
 
-    const isJson = Path.extname(path as string) === '.json';
-
-    if (!isJson) {
-      throw new BadRequestError(StorageExplorerErrors.FILE_TYPE_NOT_SUPPORTED);
-    }
-
     try {
-      const stream = createReadStream(path);
+      let stream: ReadStream;
+      if (bufferSize != undefined && !Number.isNaN(bufferSize)) {
+        stream = createReadStream(path, { highWaterMark: bufferSize });
+      } else {
+        stream = createReadStream(path);
+      }
       const { size } = await statPromise(path);
       const fileName = Path.basename(path as string);
 
-      const streamProduct: IStream = {
+      const mimeType = lookup(path as string);
+
+      const streamProduct: IReadStream = {
         stream,
-        contentType: 'application/json',
+        contentType: mimeType,
         size,
         name: fileName,
       };
@@ -120,6 +122,30 @@ class DirOperations {
       return streamProduct;
     } catch (e) {
       this.logger.error(`[DirOperations][getJsonFileStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
+      throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
+    }
+  }
+
+  public getWriteStream(path: PathLike): IWriteStream {
+    this.logger.info(`[DirOperations][getJsonFileStream] uploading file to path ${path as string}`);
+    // const isFileExists = await this.checkFileExists(path);
+    // ask if we want to override the file if exist or not
+    // if (!isFileExists) {
+    //   throw new ConflictError('File already exists');
+    // }
+
+    try {
+      const stream = createWriteStream(path);
+      const fileName = Path.basename(path as string);
+
+      const streamProduct: IWriteStream = {
+        stream,
+        name: fileName,
+      };
+
+      return streamProduct;
+    } catch (e) {
+      this.logger.error(`[DirOperations][getWriteFileStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
       throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
     }
   }
