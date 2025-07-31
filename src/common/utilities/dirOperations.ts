@@ -1,7 +1,7 @@
 import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream } from 'fs';
 import * as Path from 'path';
 import { lookup } from '@map-colonies/types';
-import { BadRequestError, NotFoundError, InternalServerError } from '@map-colonies/error-types';
+import { BadRequestError, NotFoundError, InternalServerError, ConflictError } from '@map-colonies/error-types';
 import { ImountDirObj, IReadStream, IWriteStream } from '../interfaces';
 import IFile from '../../storageExplorer/models/file.model';
 import { LoggersHandler } from '.';
@@ -126,13 +126,13 @@ class DirOperations {
     }
   }
 
-  public getWriteStream(path: PathLike): IWriteStream {
+  public async getWriteStream(path: PathLike): Promise<IWriteStream> {
     this.logger.info(`[DirOperations][getJsonFileStream] uploading file to path ${path as string}`);
-    // const isFileExists = await this.checkFileExists(path);
-    // ask if we want to override the file if exist or not
-    // if (!isFileExists) {
-    //   throw new ConflictError('File already exists');
-    // }
+    const isFileExists = await this.checkFileExists(path);
+
+    if (isFileExists) {
+      throw new ConflictError('File already exists');
+    }
 
     try {
       const stream = createWriteStream(path);

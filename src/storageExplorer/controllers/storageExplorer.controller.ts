@@ -35,7 +35,7 @@ export class StorageExplorerController {
     private readonly logger: LoggersHandler,
     private readonly mountDirs: ImountDirObj[],
     private readonly dirOperations: DirOperations = new DirOperations(logger, mountDirs)
-  ) { }
+  ) {}
 
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
@@ -144,7 +144,8 @@ export class StorageExplorerController {
     stream.on('end', () => {
       const endTime = new Date();
       this.logger.info(
-        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${endTime.getTime() - startTime.getTime()
+        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${
+          endTime.getTime() - startTime.getTime()
         } (ms), of total amont of ${chunkCount} chunks`
       );
     });
@@ -154,10 +155,10 @@ export class StorageExplorerController {
   };
 
   private readonly sendWriteStream = async (req: Request, filePath: string, callerName: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const startTime = new Date();
-      const { stream, name } = this.dirOperations.getWriteStream(filePath);
+    const startTime = new Date();
+    const { stream, name } = await this.dirOperations.getWriteStream(filePath);
 
+    return new Promise((resolve, reject) => {
       req.pipe(stream);
 
       stream.on('close', () => {
@@ -183,26 +184,30 @@ export class StorageExplorerController {
       const bb = busboy({ headers: req.headers });
 
       bb.on('file', (fieldname, file, fileInfo) => {
-        const savePath = path.join(filePath, fileInfo.filename); // filePath is a directory
-        const { stream, name } = this.dirOperations.getWriteStream(savePath);
+        (async (): Promise<void> => {
+          const savePath = path.join(filePath, fileInfo.filename); // filePath is a directory
+          const { stream, name } = await this.dirOperations.getWriteStream(savePath);
 
-        file.pipe(stream);
+          file.pipe(stream);
 
-        // file.on('data', () => {
-        //   console.log('Receiving file data...');
-        // });
+          // file.on('data', () => {
+          //   console.log('Receiving file data...');
+          // });
 
-        stream.on('finish', () => {
-          const endTime = new Date();
-          this.logger.info(
-            `[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${endTime.getTime() - startTime.getTime()}`
-          );
-          resolve();
-        });
+          stream.on('finish', () => {
+            const endTime = new Date();
+            this.logger.info(
+              `[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${endTime.getTime() - startTime.getTime()}`
+            );
+            resolve();
+          });
 
-        stream.on('error', (error) => {
-          this.logger.error(`[${callerName}] Failed to stream file: ${name}. Error: ${error.message}`);
-          reject(error);
+          stream.on('error', (error) => {
+            this.logger.error(`[${callerName}] Failed to stream file: ${name}. Error: ${error.message}`);
+            reject(error);
+          });
+        })().catch((error) => {
+          bb.emit('error', error);
         });
       });
 
