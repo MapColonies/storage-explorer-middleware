@@ -5,20 +5,21 @@ import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler'
 import { ImountDirObj } from '../../../../src';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
+import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
 
 let dirOperations: DirOperations;
 let logger;
 const mountDirs: ImountDirObj[] = [
   {
-    physical: './MOCKS',
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS`,
     displayName: '\\First_mount_dir',
   },
   {
-    physical: './MOCKS_2',
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS_2`,
     displayName: '\\Second_mount_dir',
   },
   {
-    physical: './MOCKS_3',
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS_3`,
     displayName: '\\Third_mount_dir',
   },
 ];
@@ -53,7 +54,7 @@ describe('storage explorer dirOperations', () => {
     it('should return correct physical path mapped from config', () => {
       const displayPath = '/\\\\First_mount_dir/3D_data/1b/product.json';
       const mappedPath = dirOperations.getPhysicalPath(displayPath);
-      const expectedVal = './MOCKS/3D_data/1b/product.json';
+      const expectedVal = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
       expect(mappedPath).toBe(expectedVal);
     });
 
@@ -82,7 +83,7 @@ describe('storage explorer dirOperations', () => {
 
   describe('#getDirectoryContent', () => {
     it('should return Dirent content', async () => {
-      const dirPath = './MOCKS/3D_data/1b';
+      const dirPath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b`;
       const dirent = await dirOperations.getDirectoryContent(dirPath, getFilterUnsupportedExtFunction(dirPath));
       expect(dirent).toEqual(expect.arrayContaining<Dirent>(dirent));
       const hasMetadata = dirent.some((dir) => dir.name === 'metadata.json');
@@ -90,7 +91,7 @@ describe('storage explorer dirOperations', () => {
     });
 
     it('should throw an error if dir not exists', async () => {
-      const notExistsPath = './MOCKS/3D_data/1b/3b';
+      const notExistsPath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/3b`;
 
       await expect(dirOperations.getDirectoryContent(notExistsPath, getFilterUnsupportedExtFunction(notExistsPath))).rejects.toThrow(NotFoundError);
       await expect(dirOperations.getDirectoryContent(notExistsPath, getFilterUnsupportedExtFunction(notExistsPath))).rejects.toThrow(
@@ -99,7 +100,7 @@ describe('storage explorer dirOperations', () => {
     });
 
     it('should throw an error if path is not a dir', async () => {
-      const filePath = './MOCKS/3D_data/1b/metadata.json';
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/metadata.json`;
 
       await expect(dirOperations.getDirectoryContent(filePath, getFilterUnsupportedExtFunction(filePath))).rejects.toThrow(BadRequestError);
       await expect(dirOperations.getDirectoryContent(filePath, getFilterUnsupportedExtFunction(filePath))).rejects.toThrow(
@@ -110,7 +111,7 @@ describe('storage explorer dirOperations', () => {
 
   describe('#getJsonFileStream', () => {
     it('should return IStream object with file content as a ReadStream', async () => {
-      const filePath = './MOCKS/3D_data/1b/product.json';
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
       const fileStream = await dirOperations.getReadStream(filePath);
 
       expect(fileStream).toHaveProperty('stream');
@@ -124,7 +125,7 @@ describe('storage explorer dirOperations', () => {
     });
 
     it('should throw an error if file not exists', async () => {
-      const notExistsPath = './MOCKS/3D_data/1b/product_not_exist.json';
+      const notExistsPath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product_not_exist.json`;
 
       const fileStreamError = async () => {
         return dirOperations.getReadStream(notExistsPath);

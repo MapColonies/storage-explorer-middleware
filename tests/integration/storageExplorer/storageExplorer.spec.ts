@@ -9,6 +9,7 @@ import { innerDirSnap, rootDirSnap } from './snapshots/directory';
 import { fileData } from './snapshots/file';
 import { decryptedIdRes } from './snapshots/decryptId';
 import { app, server } from './helpers/server_test';
+import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
 
 describe('Storage Explorer', function () {
   let dirOperaions: DirOperations;
@@ -16,16 +17,16 @@ describe('Storage Explorer', function () {
   let logger: Record<string, unknown>;
   const mountDirs = [
     {
-      physical: './MOCKS',
+      physical: `${MOCK_FOLDER_PREFIX}/MOCKS`,
       displayName: '\\First_mount_dir',
       includeFilesExt: ['tif'],
     },
     {
-      physical: './MOCKS_2',
+      physical: `${MOCK_FOLDER_PREFIX}/MOCKS_2`,
       displayName: '\\Second_mount_dir',
     },
     {
-      physical: './MOCKS_3',
+      physical: `${MOCK_FOLDER_PREFIX}/MOCKS_3`,
       displayName: '\\Third_mount_dir',
     },
   ];
@@ -76,7 +77,7 @@ describe('Storage Explorer', function () {
       });
 
       it('should return data of inner directories by id', async () => {
-        const res = await requestSender.getDirectoryById('eJzT0_f1d_YOBgAG0gHb');
+        const res = await requestSender.getDirectoryById('eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--');
         const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
@@ -129,7 +130,7 @@ describe('Storage Explorer', function () {
         let isFileExist = false;
 
         try {
-          await promises.access('./MOCKS_2/zipFile.zip', constants.F_OK);
+          await promises.access(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, constants.F_OK);
           isFileExist = true;
         } catch {
           isFileExist = false;
@@ -137,7 +138,7 @@ describe('Storage Explorer', function () {
 
         expect(isFileExist).toBe(true);
 
-        unlink('./MOCKS_2/zipFile.zip', () => {
+        unlink(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, () => {
           console.log('Delete file successfully');
         });
       });
@@ -152,7 +153,7 @@ describe('Storage Explorer', function () {
 
     describe('decryptId', () => {
       it('should return the correct decrypted path', async () => {
-        const directoryId = 'eJzT0_f1d_YOBgAG0gHb';
+        const directoryId = 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--';
         const res = await requestSender.getDecryptedId(directoryId);
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);

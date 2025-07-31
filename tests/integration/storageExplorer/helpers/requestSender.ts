@@ -1,5 +1,6 @@
 import path from 'path';
 import * as supertest from 'supertest';
+import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
 
 export class StorageExplorerRequestSender {
   public constructor(private readonly app: Express.Application) {}
@@ -22,7 +23,7 @@ export class StorageExplorerRequestSender {
   }
 
   public async writeStreamFile(pathSuffix: string): Promise<supertest.Response> {
-    const filePath = path.resolve(__dirname, '../../../../MOCKS/zipFile.zip');
+    const filePath = path.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
     return supertest.agent(this.app).post(`/explorer/uploadfile?pathSuffix=${pathSuffix}`).attach('file', filePath, 'newUploadedFile');
   }
 

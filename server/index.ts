@@ -8,7 +8,7 @@ app.use(express.json());
 
 const mountDirs = [
   {
-    physical: './MOCKS',
+    physical: './tests/MOCKS',
     displayName: '\\layerSource',
     includeFilesExt: ['tif', 'shp', 'gpkg'],
   },
