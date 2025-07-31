@@ -1,12 +1,12 @@
-import path from 'path';
+import * as pathModule from 'path';
 import * as supertest from 'supertest';
 import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
 
 export class StorageExplorerRequestSender {
   public constructor(private readonly app: Express.Application) {}
 
-  public async getDirectory(pathSuffix: string): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/directory?pathSuffix=${pathSuffix}`).set('Content-Type', 'application/json');
+  public async getDirectory(path: string): Promise<supertest.Response> {
+    return supertest.agent(this.app).get(`/explorer/directory?path=${path}`).set('Content-Type', 'application/json');
   }
 
   public async getDirectoryById(id: string): Promise<supertest.Response> {
@@ -17,14 +17,14 @@ export class StorageExplorerRequestSender {
     return supertest.agent(this.app).get(`/explorer/directory`);
   }
 
-  public async getStreamFile(pathSuffix: string, bufferSize?: string): Promise<supertest.Response> {
+  public async getStreamFile(path: string, bufferSize?: string): Promise<supertest.Response> {
     const bufferQuery = bufferSize !== undefined ? `&bufferSize=${bufferSize}` : '';
-    return supertest.agent(this.app).get(`/explorer/file?pathSuffix=${pathSuffix}${bufferQuery}`);
+    return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`);
   }
 
-  public async writeStreamFile(pathSuffix: string): Promise<supertest.Response> {
-    const filePath = path.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
-    return supertest.agent(this.app).post(`/explorer/file?pathSuffix=${pathSuffix}`).attach('file', filePath, 'newUploadedFile');
+  public async writeStreamFile(path: string): Promise<supertest.Response> {
+    const filePath = pathModule.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
+    return supertest.agent(this.app).post(`/explorer/file?path=${path}`).attach('file', filePath, 'newUploadedFile');
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

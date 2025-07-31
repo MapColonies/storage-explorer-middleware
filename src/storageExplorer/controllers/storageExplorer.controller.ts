@@ -16,13 +16,13 @@ const { stat: statPromise } = fsPromises;
 type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
 
 // Should return file stream
-type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { pathSuffix: string; bufferSize?: number }>;
+type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; bufferSize?: number }>;
 
 // Should upload file stream
-type UploadFileHandler = RequestHandler<Record<string, unknown>, Record<string, unknown>, undefined, { pathSuffix: string }>;
+type UploadFileHandler = RequestHandler<Record<string, unknown>, Record<string, unknown>, undefined, { path: string }>;
 
 // Should return IFile[] ( directory content )
-type GetDirectoryHandler = RequestHandler<undefined, IFile[], undefined, { pathSuffix: string }>;
+type GetDirectoryHandler = RequestHandler<undefined, IFile[], undefined, { path: string }>;
 
 // Should return dir content by its id
 type GetDirectoryByIdHandler = RequestHandler<undefined, IFile[], undefined, { id: string }>;
@@ -39,13 +39,12 @@ export class StorageExplorerController {
 
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
-      const pathSuffix: string = this.dirOperations.getPhysicalPath(req.query.pathSuffix);
-      const filePath = pathSuffix;
+      const path: string = this.dirOperations.getPhysicalPath(req.query.path);
       const bufferSize = Number(req.query.bufferSize);
       if (req.query.bufferSize !== undefined && Number.isNaN(bufferSize)) {
         throw new BadRequestError('Invalid bufferSize parameter: must be a number.');
       }
-      await this.sendReadStream(res, filePath, 'getStreamFile', bufferSize);
+      await this.sendReadStream(res, path, 'getStreamFile', bufferSize);
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
@@ -57,13 +56,13 @@ export class StorageExplorerController {
   public writeStreamFile: UploadFileHandler = async (req, res) => {
     try {
       // maybe path // path
-      const pathSuffix = req.query.pathSuffix;
+      const path = req.query.path;
 
-      if (!pathSuffix) {
-        throw new BadRequestError('Missing pathSuffix in query params');
+      if (!path) {
+        throw new BadRequestError('Missing path in query params');
       }
 
-      const physicalPath = this.dirOperations.getPhysicalPath(pathSuffix);
+      const physicalPath = this.dirOperations.getPhysicalPath(path);
       const filePath = physicalPath;
 
       await this.sendWriteStream(req as Request, filePath, 'writeStreamFile');
@@ -96,8 +95,8 @@ export class StorageExplorerController {
 
   public getDirectory: GetDirectoryHandler = async (req, res, next) => {
     try {
-      const pathSuffix: string = this.dirOperations.getPhysicalPath(req.query.pathSuffix);
-      const dirContentArr = await this.getFilesArray(pathSuffix);
+      const path: string = this.dirOperations.getPhysicalPath(req.query.path);
+      const dirContentArr = await this.getFilesArray(path);
 
       res.send(dirContentArr);
     } catch (e) {
@@ -220,8 +219,8 @@ export class StorageExplorerController {
     });
   };
 
-  private readonly getFilterUnsupportedExtFunction = (pathSuffix: string): ((dirent: Dirent) => boolean) => {
-    const currentMountDir = this.mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
+  private readonly getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boolean) => {
+    const currentMountDir = this.mountDirs.find((mount) => (path + '/').startsWith(`${mount.physical}/`));
 
     if (typeof currentMountDir === 'undefined') {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -240,14 +239,14 @@ export class StorageExplorerController {
     };
   };
 
-  private readonly getFilesArray = async (pathSuffix: string): Promise<IFile[]> => {
-    if (pathSuffix === '/') {
+  private readonly getFilesArray = async (path: string): Promise<IFile[]> => {
+    if (path === '/') {
       return this.dirOperations.generateRootDir();
     }
 
-    const directoryContent = await this.dirOperations.getDirectoryContent(pathSuffix, this.getFilterUnsupportedExtFunction(pathSuffix));
-    const encryptedParentPath = await encryptZlibPath(pathSuffix);
-    const dirContentArrayPromise = directoryContent.map(async (entry) => getFileData(pathSuffix, encryptedParentPath, entry));
+    const directoryContent = await this.dirOperations.getDirectoryContent(path, this.getFilterUnsupportedExtFunction(path));
+    const encryptedParentPath = await encryptZlibPath(path);
+    const dirContentArrayPromise = directoryContent.map(async (entry) => getFileData(path, encryptedParentPath, entry));
     const dirContentArr = await Promise.all(dirContentArrayPromise);
 
     return dirContentArr;

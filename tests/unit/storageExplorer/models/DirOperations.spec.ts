@@ -24,8 +24,8 @@ const mountDirs: ImountDirObj[] = [
   },
 ];
 
-const getFilterUnsupportedExtFunction = (pathSuffix: string): ((dirent: Dirent) => boolean) => {
-  const currentMountDir = mountDirs.find((mount) => (pathSuffix + '/').startsWith(`${mount.physical}/`));
+const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boolean) => {
+  const currentMountDir = mountDirs.find((mount) => (path + '/').startsWith(`${mount.physical}/`));
 
   if (typeof currentMountDir === 'undefined') {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

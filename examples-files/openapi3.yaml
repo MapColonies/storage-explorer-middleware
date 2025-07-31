@@ -13,7 +13,7 @@ paths:
       summary: Gets directory content
       parameters:
         - in: query
-          name: pathSuffix
+          name: path
           schema:
             type: string
           description: Requested directory path suffix.
@@ -63,7 +63,7 @@ paths:
       summary: Gets file content
       parameters:
         - in: query
-          name: pathSuffix
+          name: path
           schema:
             type: string
           description: Requested file path suffix.
