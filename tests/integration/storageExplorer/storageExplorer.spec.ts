@@ -4,12 +4,12 @@ import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptZlibPath } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
 import { LoggersHandler } from '../../../src/common/utilities';
+import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
 import { innerDirSnap, rootDirSnap } from './snapshots/directory';
 import { fileData } from './snapshots/file';
 import { decryptedIdRes } from './snapshots/decryptId';
 import { app, server } from './helpers/server_test';
-import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
 
 describe('Storage Explorer', function () {
   let dirOperaions: DirOperations;
@@ -146,7 +146,7 @@ describe('Storage Explorer', function () {
       it(`should return the file content when file extension is missing`, async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/textFileWithoutSuffix');
         expect(res.text).toBe('just a file'); // Ask If Should Put It In Seperated File
-        expect(res.headers.contentType).toBe(undefined);
+        expect((res.headers as { contentType?: string }).contentType).toBeUndefined();
         expect(res.status).toBe(httpStatusCodes.OK);
       });
     });

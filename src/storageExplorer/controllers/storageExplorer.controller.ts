@@ -130,6 +130,7 @@ export class StorageExplorerController {
     // let totalBytes = 0;
 
     stream.pipe(res);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     stream.on('open', (chunk: Buffer) => {
       this.logger.info(`[StorageExplorerController][${callerName}] Open a stream file: ${name} `);
     });
