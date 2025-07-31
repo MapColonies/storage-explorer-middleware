@@ -24,7 +24,7 @@ export class StorageExplorerRequestSender {
 
   public async writeStreamFile(pathSuffix: string): Promise<supertest.Response> {
     const filePath = path.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
-    return supertest.agent(this.app).post(`/explorer/uploadfile?pathSuffix=${pathSuffix}`).attach('file', filePath, 'newUploadedFile');
+    return supertest.agent(this.app).post(`/explorer/file?pathSuffix=${pathSuffix}`).attach('file', filePath, 'newUploadedFile');
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

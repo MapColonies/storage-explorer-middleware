@@ -35,7 +35,7 @@ export class StorageExplorerController {
     private readonly logger: LoggersHandler,
     private readonly mountDirs: ImountDirObj[],
     private readonly dirOperations: DirOperations = new DirOperations(logger, mountDirs)
-  ) {}
+  ) { }
 
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
@@ -144,8 +144,7 @@ export class StorageExplorerController {
     stream.on('end', () => {
       const endTime = new Date();
       this.logger.info(
-        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${
-          endTime.getTime() - startTime.getTime()
+        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${endTime.getTime() - startTime.getTime()
         } (ms), of total amont of ${chunkCount} chunks`
       );
     });
