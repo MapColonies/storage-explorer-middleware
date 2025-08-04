@@ -40,11 +40,11 @@ export class StorageExplorerController {
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
       const path: string = this.dirOperations.getPhysicalPath(req.query.path);
-      const bufferSize = Number(req.query.buffersize);
-      if (req.query.buffersize !== undefined && Number.isNaN(bufferSize)) {
-        throw new BadRequestError('Invalid bufferSize parameter: must be a number.');
+      const buffersize = Number(req.query.buffersize);
+      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
+        throw new BadRequestError('Invalid buffersize parameter: must be a number.');
       }
-      await this.sendReadStream(res, path, 'getStreamFile', bufferSize);
+      await this.sendReadStream(res, path, 'getStreamFile', buffersize);
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
@@ -120,8 +120,8 @@ export class StorageExplorerController {
     }
   };
 
-  private readonly sendReadStream = async (res: Response, filePath: string, callerName: string, bufferSize?: number): Promise<void> => {
-    const { stream, contentType, size, name }: IReadStream = await this.dirOperations.getReadStream(filePath, bufferSize);
+  private readonly sendReadStream = async (res: Response, filePath: string, callerName: string, buffersize?: number): Promise<void> => {
+    const { stream, contentType, size, name }: IReadStream = await this.dirOperations.getReadStream(filePath, buffersize);
 
     if (contentType !== undefined) {
       res.setHeader('Content-Type', contentType);
