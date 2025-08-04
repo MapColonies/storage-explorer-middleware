@@ -93,7 +93,7 @@ describe('Storage Explorer', function () {
         expect(res.body).toMatchObject(fileData);
       });
 
-      it('add buffer size should return 200', async () => {
+      it('should return 200 when sending buffer size parameter', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json', '1000000');
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);

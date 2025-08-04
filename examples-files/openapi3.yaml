@@ -66,20 +66,81 @@ paths:
           name: path
           schema:
             type: string
-          description: Requested file path suffix.
+          description: Requested file path.
           allowReserved: true
           required: true
+
+        - in: query
+          name: buffersize
+          schema:
+            type: number
+          description: Max buffer size for each data chunk in the stream.
+          allowReserved: true
+          required: false
       responses:
         200:
           description: OK
           content:
-            application/json:
+            'application/octet-stream':
+              schema:
+                type: string
+                format: binary
+        404:
+          description: BAD REQUEST
+          content:
+            'application/json':
               schema:
                 $ref: '#/components/schemas/res'
         500:
           description: INTERNAL SERVER ERROR
           content:
-            application/json:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/error'
+
+    post:
+      summary: Upload file content to a specified path
+      parameters:
+        - in: query
+          name: path
+          schema:
+            type: string
+          description: The path on the server where the file will be stored.
+          allowReserved: true
+          required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required:
+                - file
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        201:
+          description: CREATED
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        404:
+          description: BAD REQUEST
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            'application/json':
               schema:
                 $ref: '#/components/schemas/error'
 
@@ -98,7 +159,7 @@ paths:
         200:
           description: OK
           content:
-            application/json:
+            application/octet-stream:
               schema:
                 $ref: '#/components/schemas/res'
         500:

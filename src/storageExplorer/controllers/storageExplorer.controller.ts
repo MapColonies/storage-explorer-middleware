@@ -16,7 +16,7 @@ const { stat: statPromise } = fsPromises;
 type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
 
 // Should return file stream
-type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; bufferSize?: number }>;
+type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; buffersize?: number }>;
 
 // Should upload file stream
 type UploadFileHandler = RequestHandler<Record<string, unknown>, Record<string, unknown>, undefined, { path: string }>;
@@ -40,8 +40,8 @@ export class StorageExplorerController {
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
       const path: string = this.dirOperations.getPhysicalPath(req.query.path);
-      const bufferSize = Number(req.query.bufferSize);
-      if (req.query.bufferSize !== undefined && Number.isNaN(bufferSize)) {
+      const bufferSize = Number(req.query.buffersize);
+      if (req.query.buffersize !== undefined && Number.isNaN(bufferSize)) {
         throw new BadRequestError('Invalid bufferSize parameter: must be a number.');
       }
       await this.sendReadStream(res, path, 'getStreamFile', bufferSize);
@@ -55,17 +55,21 @@ export class StorageExplorerController {
 
   public writeStreamFile: UploadFileHandler = async (req, res) => {
     try {
-      // maybe path // path
       const path = req.query.path;
+      const contentType = req.headers['content-type'];
 
       if (!path) {
         throw new BadRequestError('Missing path in query params');
       }
 
       const physicalPath = this.dirOperations.getPhysicalPath(path);
-      const filePath = physicalPath;
 
-      await this.sendWriteStream(req as Request, filePath, 'writeStreamFile');
+      if (contentType?.includes('multipart/form-data')) {
+        await this.sendWriteStreamFormData(req as Request, physicalPath, 'writeStreamFile');
+      } else {
+        await this.sendWriteStream(req as Request, physicalPath, 'writeStreamFile');
+      }
+
       res.status(StatusCodes.CREATED).send();
     } catch (e) {
       res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: JSON.stringify(e) });
@@ -124,15 +128,11 @@ export class StorageExplorerController {
     }
     res.setHeader('Content-Length', size);
 
-    const startTime = new Date();
+    const startTime = performance.now();
     let chunkCount = 0;
     // let totalBytes = 0;
 
     stream.pipe(res);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    stream.on('open', (chunk: Buffer) => {
-      this.logger.info(`[StorageExplorerController][${callerName}] Open a stream file: ${name} `);
-    });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     stream.on('data', (chunk: Buffer) => {
@@ -140,31 +140,31 @@ export class StorageExplorerController {
       // totalBytes += chunk.length;
       // console.log(`Chunk ${chunkCount}: ${chunk.length} bytes`);
     });
+
     stream.on('end', () => {
-      const endTime = new Date();
+      const endTime = performance.now();
+      const totalTime = Math.round(endTime - startTime);
       this.logger.info(
-        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${
-          endTime.getTime() - startTime.getTime()
-        } (ms), of total amont of ${chunkCount} chunks`
+        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), of total amont of ${chunkCount} chunks`
       );
     });
+
     stream.on('error', (error) => {
       this.logger.error(`[StorageExplorerController][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
     });
   };
 
-  private readonly sendWriteStream = async (req: Request, filePath: string, callerName: string): Promise<void> => {
-    const startTime = new Date();
-    const { stream, name } = await this.dirOperations.getWriteStream(filePath);
+  private readonly sendWriteStream = async (req: Request, path: string, callerName: string): Promise<void> => {
+    const { stream, name } = await this.dirOperations.getWriteStream(path);
+    const startTime = performance.now();
 
     return new Promise((resolve, reject) => {
       req.pipe(stream);
 
       stream.on('close', () => {
-        const endTime = new Date();
-        this.logger.info(
-          `[StorageExplorerController][${callerName}] Successfully uploaded a file: ${name} after ${endTime.getTime() - startTime.getTime()} ms`
-        );
+        const endTime = performance.now();
+        const totalTime = Math.round(endTime - startTime);
+        this.logger.info(`[StorageExplorerController][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
         resolve();
       });
 
@@ -176,28 +176,22 @@ export class StorageExplorerController {
     });
   };
 
-  private readonly sendWriteStreamFormData = async (req: Request, filePath: string, callerName: string): Promise<void> => {
+  private readonly sendWriteStreamFormData = async (req: Request, path: string, callerName: string): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const startTime = new Date();
+      const startTime = performance.now();
 
       const bb = busboy({ headers: req.headers });
 
       bb.on('file', (fieldname, file, fileInfo) => {
         (async (): Promise<void> => {
-          const savePath = path.join(filePath, fileInfo.filename); // filePath is a directory
-          const { stream, name } = await this.dirOperations.getWriteStream(savePath);
+          const { stream, name } = await this.dirOperations.getWriteStream(path);
 
           file.pipe(stream);
 
-          // file.on('data', () => {
-          //   console.log('Receiving file data...');
-          // });
-
           stream.on('finish', () => {
-            const endTime = new Date();
-            this.logger.info(
-              `[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${endTime.getTime() - startTime.getTime()}`
-            );
+            const endTime = performance.now();
+            const totalTime = Math.round(endTime - startTime);
+            this.logger.info(`[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}`);
             resolve();
           });
 
