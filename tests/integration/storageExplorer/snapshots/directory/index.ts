@@ -34,14 +34,14 @@ export const innerDirSnap = [
     parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
   },
   {
-    id: 'eJwrSS0uKdb39Xf2DoaSJanFJXolmWkAeFMI7A--',
+    id: 'eJwrSS0uKdb39Xf2DoaSJUARvZLMNAB4Uwjs',
     name: 'test.tif',
     isDir: false,
     parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
     size: 100318,
   },
   {
-    id: 'eJwrSS0uKdb39Xf2DoaSJanFJUZ6IDIzL13PUM9Az0CvJDMNACHVDWU-',
+    id: 'eJwrSS0uKdb39Xf2DoaSJUARIz0QmZmXrmeoZwCEJZlpACHVDWU-',
     name: 'test2.testing.1.0.0.tif',
     isDir: false,
     parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
