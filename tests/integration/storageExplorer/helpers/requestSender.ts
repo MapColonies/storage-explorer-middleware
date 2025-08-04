@@ -17,8 +17,8 @@ export class StorageExplorerRequestSender {
     return supertest.agent(this.app).get(`/explorer/directory`);
   }
 
-  public async getStreamFile(path: string, bufferSize?: string): Promise<supertest.Response> {
-    const bufferQuery = bufferSize !== undefined ? `&bufferSize=${bufferSize}` : '';
+  public async getStreamFile(path: string, buffersize?: string): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
     return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`);
   }
 
