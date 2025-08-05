@@ -39,7 +39,7 @@ export class StorageExplorerController {
 
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
-      const path: string = this.dirOperations.getPhysicalPath(req.query.path);
+      const path: string = this.dirOperations.getPhysicalPath(decodeURIComponent(req.query.path));
       const buffersize = Number(req.query.buffersize);
       if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
         throw new BadRequestError('Invalid buffersize parameter: must be a number.');
@@ -55,7 +55,7 @@ export class StorageExplorerController {
 
   public writeStreamFile: UploadFileHandler = async (req, res) => {
     try {
-      const path = req.query.path;
+      const path = decodeURIComponent(req.query.path);
       const overwrite = req.query.overwrite === 'true' ? true : false;
       const contentType = req.headers['content-type'];
 
