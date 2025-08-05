@@ -1,5 +1,6 @@
-import { Dirent, ReadStream } from 'fs';
-import { BadRequestError, NotFoundError } from '@map-colonies/error-types';
+import { createWriteStream, Dirent, ReadStream } from 'fs';
+import { BadRequestError, ConflictError, NotFoundError } from '@map-colonies/error-types';
+import { PassThrough } from 'stream';
 import { DirOperations } from '../../../../src/common/utilities';
 import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler';
 import { ImountDirObj } from '../../../../src';
@@ -23,6 +24,16 @@ const mountDirs: ImountDirObj[] = [
     displayName: '\\Third_mount_dir',
   },
 ];
+
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  createWriteStream: jest.fn((path) => ({
+    sm: 'mock result ' + path,
+    write: jest.fn(),
+    end: jest.fn(),
+    on: jest.fn(),
+  })),
+}));
 
 const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boolean) => {
   const currentMountDir = mountDirs.find((mount) => (path + '/').startsWith(`${mount.physical}/`));
@@ -48,6 +59,7 @@ describe('storage explorer dirOperations', () => {
   beforeEach(function () {
     logger = new LoggersHandler(console as unknown as Record<string, unknown>);
     dirOperations = new DirOperations(logger, mountDirs);
+    jest.clearAllMocks();
   });
 
   describe('#getPhysicalPath', () => {
@@ -109,8 +121,8 @@ describe('storage explorer dirOperations', () => {
     });
   });
 
-  describe('#getJsonFileStream', () => {
-    it('should return IStream object with file content as a ReadStream', async () => {
+  describe('#getReadStream', () => {
+    it('should return IReadStream object with file content as a ReadStream', async () => {
       const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
       const fileStream = await dirOperations.getReadStream(filePath);
 
@@ -133,6 +145,107 @@ describe('storage explorer dirOperations', () => {
 
       await expect(fileStreamError).rejects.toThrow(NotFoundError);
       await expect(fileStreamError).rejects.toThrow('fp.error.file_not_found');
+    });
+  });
+
+  describe('#getWriteStream', () => {
+    it('should throw ConflictError if overwrite is false and file already exist', async () => {
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
+      const overwrite = false;
+
+      const fileStreamError = dirOperations.getWriteStream(filePath, overwrite);
+
+      await expect(fileStreamError).rejects.toThrow(ConflictError);
+      expect(createWriteStream).toBeCalledTimes(0);
+    });
+
+    it('should throw ConflictError if overwrite not set and file already exist', async () => {
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
+
+      const fileStreamError = async () => {
+        return dirOperations.getWriteStream(filePath);
+      };
+
+      await expect(fileStreamError).rejects.toThrow(ConflictError);
+      expect(createWriteStream).toBeCalledTimes(0);
+    });
+
+    it('should return IWriteStream object with expected parameters for existing file', async () => {
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
+
+      const res = await dirOperations.getWriteStream(filePath, true);
+      expect(res.name).toBe('product.json');
+      expect(res).toHaveProperty('stream');
+      expect(createWriteStream).toBeCalledTimes(1);
+    });
+
+    it('should return IWriteStream object with expected parameters for not existing file', async () => {
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product_not_exist.json`;
+
+      const res = await dirOperations.getWriteStream(filePath);
+      expect(res.name).toBe('product_not_exist.json');
+      expect(res).toHaveProperty('stream');
+      expect(createWriteStream).toBeCalledTimes(1);
+    });
+  });
+
+  describe('#openReadStream', () => {
+    const res = {
+      setHeader: jest.fn(),
+      write: jest.fn(),
+      on: jest.fn(),
+      once: jest.fn(),
+      emit: jest.fn(),
+    } as any;
+
+    it('should set headers and invoke pipe stream', async () => {
+      const fakeStream = new PassThrough();
+      fakeStream.pipe = jest.fn().mockReturnValue(res);
+
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
+
+      dirOperations.getReadStream = jest.fn().mockResolvedValue({
+        stream: fakeStream,
+        contentType: 'application/json',
+        size: 123,
+        name: 'file.txt',
+      });
+
+      await dirOperations.openReadStream(res, filePath, '');
+
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Length', 123);
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
+
+      expect(fakeStream.pipe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('#openWriteStream', () => {
+    const req = {
+      params: {},
+      body: {},
+      query: { path: '' },
+      headers: {},
+      pipe: jest.fn((stream) => {
+        process.nextTick(() => {
+          stream.emit('close');
+        });
+      }),
+    } as any;
+
+    it('should invoke pipe stream', async () => {
+      const fakeStream = new PassThrough();
+
+      dirOperations.getWriteStream = jest.fn().mockResolvedValue({
+        stream: fakeStream,
+        name: 'file.txt',
+      });
+
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product_not_exist.json`;
+
+      await dirOperations.openWriteStream(req, filePath, '');
+
+      expect(req.pipe).toHaveBeenCalledTimes(1);
     });
   });
 });
