@@ -184,7 +184,7 @@ class DirOperations {
     });
   };
 
-  public readonly openWriteStream = async (req: Request, path: string, overwrite: boolean, callerName: string): Promise<void> => {
+  public readonly openWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
     const { stream, name } = await this.getWriteStream(path, overwrite);
     const startTime = performance.now();
 
@@ -206,7 +206,7 @@ class DirOperations {
     });
   };
 
-  public readonly openFormDataWriteStream = async (req: Request, path: string, overwrite: boolean, callerName: string): Promise<void> => {
+  public readonly openFormDataWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
     return new Promise((resolve, reject) => {
       const startTime = performance.now();
 

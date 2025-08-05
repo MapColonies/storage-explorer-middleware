@@ -66,9 +66,9 @@ export class StorageExplorerController {
       const physicalPath = this.dirOperations.getPhysicalPath(path);
 
       if (contentType?.includes('multipart/form-data')) {
-        await this.dirOperations.openFormDataWriteStream(req as Request, physicalPath, overwrite, 'writeStreamFile');
+        await this.dirOperations.openFormDataWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
       } else {
-        await this.dirOperations.openWriteStream(req as Request, physicalPath, overwrite, 'writeStreamFile');
+        await this.dirOperations.openWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
       }
 
       res.status(StatusCodes.CREATED).send();
