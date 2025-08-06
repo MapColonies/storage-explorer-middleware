@@ -59,5 +59,5 @@ Simply connect the middleware to your server instance and pass the required para
 *(You can also add it to the ignore path regex to exclude explorer routes from the validations)*
 You can find an example for the openapi.yaml file [here](https://github.com/MapColonies/storage-explorer-middleware/blob/master/examples-files/openapi3.yaml).
 
-- For testing you can import "StorageExplorer.postman_collection.json" to Postman and see examples
+- For testing, you can import the StorageExplorer.postman_collection.json file into Postman to view the examples. When uploading, make sure to upload a file from your local machine.
 

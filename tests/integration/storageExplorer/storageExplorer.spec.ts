@@ -193,11 +193,10 @@ describe('Storage Explorer', function () {
         expect(status).toBe(httpStatusCodes.NOT_FOUND);
       });
 
-      it('should return 500 if required query not provided', async () => {
+      it('should return 400 if required query not provided', async () => {
         const { status } = await requestSender.getFileWithoutQuery();
         // When connecting to a real server there's open api which should handle these errors
-        // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 
       it('should return 400 if buffer size in not a number', async () => {

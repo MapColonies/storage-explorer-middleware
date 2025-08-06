@@ -2,11 +2,10 @@
 import { Dirent, promises as fsPromises } from 'fs';
 import path from 'path';
 import { BadRequestError, HttpError } from '@map-colonies/error-types';
-import busboy from 'busboy';
-import { RequestHandler, Response, Request } from 'express';
+import { RequestHandler, Request } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { DirOperations, encryptZlibPath, dencryptZlibPath } from '../../common/utilities';
-import { ImountDirObj, IReadStream } from '../../common/interfaces';
+import { ImountDirObj } from '../../common/interfaces';
 import { LoggersHandler } from '../../common/utilities';
 import IFile from '../models/file.model';
 
@@ -39,17 +38,21 @@ export class StorageExplorerController {
 
   public getStreamFile: GetFileHandler = async (req, res) => {
     try {
-      const path: string = this.dirOperations.getPhysicalPath(decodeURIComponent(req.query.path));
+      const path = decodeURIComponent(req.query.path);
+      if (!req.query.path || !path) {
+        throw new BadRequestError('Missing path in query params');
+      }
+      const physicalPath: string = this.dirOperations.getPhysicalPath(decodeURIComponent(path));
       const buffersize = Number(req.query.buffersize);
       if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
         throw new BadRequestError('Invalid buffersize parameter: must be a number.');
       }
-      await this.dirOperations.openReadStream(res, path, 'getStreamFile', buffersize);
+      await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', buffersize);
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
       // ERROR MESSAGE SHOULD LOOKS LIKE fp.error.file_not_found
-      res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: JSON.stringify(e) });
+      res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: e });
     }
   };
 
@@ -59,14 +62,16 @@ export class StorageExplorerController {
       const overwrite = req.query.overwrite === 'true' ? true : false;
       const contentType = req.headers['content-type'];
 
-      if (!path) {
+      if (!req.query.path || !path) {
         throw new BadRequestError('Missing path in query params');
       }
 
       const physicalPath = this.dirOperations.getPhysicalPath(path);
 
-      if (contentType?.includes('multipart/form-data')) {
+      if (contentType?.includes('multipart/form-data') === true) {
         await this.dirOperations.openFormDataWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
+      } else if (contentType === undefined) {
+        throw new BadRequestError('File is required');
       } else {
         await this.dirOperations.openWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
       }

@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+// because of mocking res.setHeader and fakeStream.pipe
 import { createWriteStream, Dirent, ReadStream } from 'fs';
+import { EventEmitter, PassThrough } from 'stream';
 import { BadRequestError, ConflictError, NotFoundError } from '@map-colonies/error-types';
-import { PassThrough } from 'stream';
+import { Request, Response } from 'express';
 import { DirOperations } from '../../../../src/common/utilities';
 import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler';
 import { ImountDirObj } from '../../../../src';
@@ -27,8 +30,7 @@ const mountDirs: ImountDirObj[] = [
 
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
-  createWriteStream: jest.fn((path) => ({
-    sm: 'mock result ' + path,
+  createWriteStream: jest.fn(() => ({
     write: jest.fn(),
     end: jest.fn(),
     on: jest.fn(),
@@ -156,7 +158,7 @@ describe('storage explorer dirOperations', () => {
       const fileStreamError = dirOperations.getWriteStream(filePath, overwrite);
 
       await expect(fileStreamError).rejects.toThrow(ConflictError);
-      expect(createWriteStream).toBeCalledTimes(0);
+      expect(createWriteStream).toHaveBeenCalledTimes(0);
     });
 
     it('should throw ConflictError if overwrite not set and file already exist', async () => {
@@ -167,7 +169,7 @@ describe('storage explorer dirOperations', () => {
       };
 
       await expect(fileStreamError).rejects.toThrow(ConflictError);
-      expect(createWriteStream).toBeCalledTimes(0);
+      expect(createWriteStream).toHaveBeenCalledTimes(0);
     });
 
     it('should return IWriteStream object with expected parameters for existing file', async () => {
@@ -176,7 +178,7 @@ describe('storage explorer dirOperations', () => {
       const res = await dirOperations.getWriteStream(filePath, true);
       expect(res.name).toBe('product.json');
       expect(res).toHaveProperty('stream');
-      expect(createWriteStream).toBeCalledTimes(1);
+      expect(createWriteStream).toHaveBeenCalledTimes(1);
     });
 
     it('should return IWriteStream object with expected parameters for not existing file', async () => {
@@ -185,18 +187,20 @@ describe('storage explorer dirOperations', () => {
       const res = await dirOperations.getWriteStream(filePath);
       expect(res.name).toBe('product_not_exist.json');
       expect(res).toHaveProperty('stream');
-      expect(createWriteStream).toBeCalledTimes(1);
+      expect(createWriteStream).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('#openReadStream', () => {
     const res = {
-      setHeader: jest.fn(),
+      setHeader: jest.fn().mockImplementationOnce(() => {
+        console.log('setHeader');
+      }),
       write: jest.fn(),
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
-    } as any;
+    } as unknown as jest.Mocked<Response>;
 
     it('should set headers and invoke pipe stream', async () => {
       const fakeStream = new PassThrough();
@@ -226,12 +230,12 @@ describe('storage explorer dirOperations', () => {
       body: {},
       query: { path: '' },
       headers: {},
-      pipe: jest.fn((stream) => {
+      pipe: jest.fn().mockImplementationOnce((stream: EventEmitter) => {
         process.nextTick(() => {
           stream.emit('close');
         });
       }),
-    } as any;
+    } as unknown as jest.Mocked<Request>;
 
     it('should invoke pipe stream', async () => {
       const fakeStream = new PassThrough();

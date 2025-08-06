@@ -133,7 +133,7 @@ class DirOperations {
     this.logger.info(`[DirOperations][getJsonFileStream] uploading file to path ${path as string}`);
     const isFileExists = await this.checkFileExists(path);
 
-    if (isFileExists && !overwrite) {
+    if (isFileExists && overwrite !== true) {
       throw new ConflictError('File already exists');
     }
 
@@ -161,19 +161,18 @@ class DirOperations {
     }
     res.setHeader('Content-Length', size);
 
-    const startTime = performance.now();
+    const startTime = Date.now();
     let chunkCount = 0;
 
     stream.pipe(res);
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    stream.on('data', (chunk: Buffer) => {
+    stream.on('data', () => {
       chunkCount++;
     });
 
     stream.on('end', () => {
-      const endTime = performance.now();
-      const totalTime = Math.round(endTime - startTime);
+      const endTime = Date.now();
+      const totalTime = endTime - startTime;
       this.logger.info(
         `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), of total amont of ${chunkCount} chunks`
       );
@@ -186,14 +185,15 @@ class DirOperations {
 
   public readonly openWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
     const { stream, name } = await this.getWriteStream(path, overwrite);
-    const startTime = performance.now();
+
+    const startTime = Date.now();
 
     return new Promise((resolve, reject) => {
       req.pipe(stream);
 
       stream.on('close', () => {
-        const endTime = performance.now();
-        const totalTime = Math.round(endTime - startTime);
+        const endTime = Date.now();
+        const totalTime = endTime - startTime;
         this.logger.info(`[StorageExplorerController][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
         resolve();
       });
@@ -208,19 +208,19 @@ class DirOperations {
 
   public readonly openFormDataWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const startTime = performance.now();
+      const startTime = Date.now();
 
       const bb = busboy({ headers: req.headers });
 
-      bb.on('file', (fieldname, file, fileInfo) => {
+      bb.on('file', (fieldname, file) => {
         (async (): Promise<void> => {
           const { stream, name } = await this.getWriteStream(path, overwrite);
 
           file.pipe(stream);
 
           stream.on('finish', () => {
-            const endTime = performance.now();
-            const totalTime = Math.round(endTime - startTime);
+            const endTime = Date.now();
+            const totalTime = endTime - startTime;
             this.logger.info(`[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}`);
             resolve();
           });
