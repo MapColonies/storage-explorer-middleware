@@ -1,4 +1,4 @@
-import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream } from 'fs';
+import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream, WriteStream } from 'fs';
 import * as Path from 'path';
 import { lookup } from '@map-colonies/types';
 import busboy from 'busboy';
@@ -129,7 +129,7 @@ class DirOperations {
     }
   }
 
-  public async getWriteStream(path: PathLike, overwrite?: boolean): Promise<IWriteStream> {
+  public async getWriteStream(path: PathLike, overwrite?: boolean, buffersize?: number): Promise<IWriteStream> {
     this.logger.info(`[DirOperations][getJsonFileStream] uploading file to path ${path as string}`);
     const isFileExists = await this.checkFileExists(path);
 
@@ -138,7 +138,14 @@ class DirOperations {
     }
 
     try {
-      const stream = createWriteStream(path);
+      let stream: WriteStream;
+
+      if (buffersize != undefined && !Number.isNaN(buffersize)) {
+        stream = createWriteStream(path, { highWaterMark: buffersize });
+      } else {
+        stream = createWriteStream(path);
+      }
+
       const fileName = Path.basename(path as string);
 
       const streamProduct: IWriteStream = {
@@ -183,8 +190,14 @@ class DirOperations {
     });
   };
 
-  public readonly openWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
-    const { stream, name } = await this.getWriteStream(path, overwrite);
+  public readonly openWriteStream = async (
+    req: Request,
+    path: string,
+    callerName: string,
+    overwrite?: boolean,
+    buffersize?: number
+  ): Promise<void> => {
+    const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
 
     const startTime = Date.now();
 
@@ -200,43 +213,59 @@ class DirOperations {
 
       stream.on('error', (error) => {
         this.logger.error(`[StorageExplorerController][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
-        const isNotFound = error.message.includes('ENOENT'); // Node.js stream error for "file not found"
+        const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
         reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
       });
     });
   };
 
-  public readonly openFormDataWriteStream = async (req: Request, path: string, callerName: string, overwrite?: boolean): Promise<void> => {
+  public readonly openFormDataWriteStream = async (
+    req: Request,
+    path: string,
+    callerName: string,
+    overwrite?: boolean,
+    buffersize?: number
+  ): Promise<void> => {
     return new Promise((resolve, reject) => {
       const startTime = Date.now();
+
+      let chunkCount = 0;
 
       const bb = busboy({ headers: req.headers });
 
       bb.on('file', (fieldname, file) => {
         (async (): Promise<void> => {
-          const { stream, name } = await this.getWriteStream(path, overwrite);
+          const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
 
           file.pipe(stream);
+
+          file.on('data', () => {
+            chunkCount++;
+          });
 
           stream.on('finish', () => {
             const endTime = Date.now();
             const totalTime = endTime - startTime;
-            this.logger.info(`[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}`);
+            this.logger.info(
+              `[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}, of total amont of ${chunkCount} chunks`
+            );
             resolve();
           });
 
           stream.on('error', (error) => {
-            this.logger.error(`[${callerName}] Failed to stream file: ${name}. Error: ${error.message}`);
-            reject(error);
+            this.logger.error(`[StorageExplorerController][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
+            const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "dir/file not found"
+            reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
           });
         })().catch((error) => {
           bb.emit('error', error);
         });
       });
 
-      bb.on('error', (error) => {
-        this.logger.error(`[${callerName}] Busboy error: ${(error as Error).message}`);
-        reject(error);
+      bb.on('error', (error: Error) => {
+        this.logger.error(`[${callerName}] Busboy error: ${error.message}`);
+        const isNotFound = error.message.includes('ENOENT'); // Node.js stream error for "dir/file not found"
+        reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
       });
 
       req.pipe(bb);

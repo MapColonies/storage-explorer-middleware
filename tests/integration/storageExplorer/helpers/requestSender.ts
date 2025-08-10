@@ -22,9 +22,10 @@ export class StorageExplorerRequestSender {
     return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`);
   }
 
-  public async writeStreamFile(path: string): Promise<supertest.Response> {
+  public async writeStreamFile(path: string, buffersize?: string): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
     const filePath = pathModule.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
-    return supertest.agent(this.app).post(`/explorer/file?path=${path}`).attach('file', filePath, 'newUploadedFile');
+    return supertest.agent(this.app).post(`/explorer/file?path=${path}${bufferQuery}`).attach('file', filePath);
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

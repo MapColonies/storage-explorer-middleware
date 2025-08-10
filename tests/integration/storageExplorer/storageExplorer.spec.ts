@@ -120,6 +120,13 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/zip');
         expect(res.status).toBe(httpStatusCodes.OK);
       });
+
+      it(`should return the file content when file extension is missing`, async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/textFileWithoutSuffix');
+        expect(res.text).toBe('just a file');
+        expect((res.headers as { contentType?: string }).contentType).toBeUndefined();
+        expect(res.status).toBe(httpStatusCodes.OK);
+      });
     });
 
     describe('uploadFile', () => {
@@ -141,13 +148,6 @@ describe('Storage Explorer', function () {
         unlink(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, () => {
           console.log('Delete file successfully');
         });
-      });
-
-      it(`should return the file content when file extension is missing`, async () => {
-        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/textFileWithoutSuffix');
-        expect(res.text).toBe('just a file'); // Ask If Should Put It In Seperated File
-        expect((res.headers as { contentType?: string }).contentType).toBeUndefined();
-        expect(res.status).toBe(httpStatusCodes.OK);
       });
     });
 
@@ -199,8 +199,20 @@ describe('Storage Explorer', function () {
         expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
 
-      it('should return 400 if buffer size in not a number', async () => {
+      it('should return 400 if buffer size in not a number/undefined', async () => {
         const { status } = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+      });
+    });
+
+    describe('uploadFile', () => {
+      it('should return 404 if path directory not found', async () => {
+        const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
+        expect(status).toBe(httpStatusCodes.NOT_FOUND);
+      });
+
+      it('should return 400 if buffer size in not a number/undefined', async () => {
+        const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
         expect(status).toBe(httpStatusCodes.BAD_REQUEST);
       });
     });

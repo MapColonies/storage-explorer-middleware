@@ -15,10 +15,15 @@ const { stat: statPromise } = fsPromises;
 type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
 
 // Should return file stream
-type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; buffersize?: number }>;
+type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; buffersize?: string }>;
 
 // Should upload file stream
-type UploadFileHandler = RequestHandler<Record<string, unknown>, Record<string, unknown>, undefined, { path: string; overwrite?: string }>;
+type UploadFileHandler = RequestHandler<
+  Record<string, unknown>,
+  Record<string, unknown>,
+  undefined,
+  { path: string; overwrite?: string; buffersize?: string }
+>;
 
 // Should return IFile[] ( directory content )
 type GetDirectoryHandler = RequestHandler<undefined, IFile[], undefined, { path: string }>;
@@ -67,13 +72,18 @@ export class StorageExplorerController {
       }
 
       const physicalPath = this.dirOperations.getPhysicalPath(path);
+      const buffersize = Number(req.query.buffersize);
+
+      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
+        throw new BadRequestError('Invalid buffersize parameter: must be a number.');
+      }
 
       if (contentType?.includes('multipart/form-data') === true) {
-        await this.dirOperations.openFormDataWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
+        await this.dirOperations.openFormDataWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite, buffersize);
       } else if (contentType === undefined) {
         throw new BadRequestError('File is required');
       } else {
-        await this.dirOperations.openWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite);
+        await this.dirOperations.openWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite, buffersize);
       }
 
       res.status(StatusCodes.CREATED).send();

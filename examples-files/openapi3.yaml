@@ -74,8 +74,7 @@ paths:
           name: buffersize
           schema:
             type: number
-          description: Max buffer size for each data chunk in the stream.
-          allowReserved: true
+          description: Max buffer size for each data chunk in the stream, in bytes.
           required: false
       responses:
         200:
@@ -108,6 +107,20 @@ paths:
           description: The path on the server where the file will be stored.
           allowReserved: true
           required: true
+
+        - in: query
+          name: overwrite
+          schema:
+            type: boolean
+          description: If file already exist, should overwrite the file or not.
+          required: false
+
+        - in: query
+          name: buffersize
+          schema:
+            type: number
+          description: Max buffer size for each data chunk in the stream, in bytes.
+          required: false
       requestBody:
         required: true
         content:
