@@ -15,7 +15,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:5656/explorer/file?path=/\\\\firstLayerSource/textFileWithoutSuffix&buffersize=1000000",
+          "raw": "http://localhost:5656/explorer/file?path=/\\\\firstLayerSource/textFileWithoutSuffix&buffersize=1048576",
           "protocol": "http",
           "host": ["localhost"],
           "port": "5656",
@@ -32,7 +32,7 @@
             },
             {
               "key": "buffersize",
-              "value": "1000000"
+              "value": "1048576"
             },
             {
               "key": "buffersize",
