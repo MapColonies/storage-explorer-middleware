@@ -1,7 +1,6 @@
 import express from 'express';
 import getStorageExplorerMiddleware from '../src/storageExplorer/middlewares/getStorageExplorerMiddleware';
-
-const MOCK_FOLDER_PREFIX = './tests/MOCKS';
+import { MOCK_FOLDER_PREFIX } from '../tests/MOCKS/utils'
 
 const app = express();
 const PORT = 5656;

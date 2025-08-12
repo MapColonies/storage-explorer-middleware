@@ -96,7 +96,7 @@ class DirOperations {
   }
 
   public async getReadStream(path: PathLike, buffersize?: number): Promise<IReadStream> {
-    this.logger.info(`[DirOperations][getJsonFileStream] fetching file at path ${path as string}`);
+    this.logger.info(`[DirOperations][getReadStream] fetching file at path ${path as string}`);
     const isFileExists = await this.checkFileExists(path);
 
     if (!isFileExists) {
@@ -124,13 +124,13 @@ class DirOperations {
 
       return streamProduct;
     } catch (e) {
-      this.logger.error(`[DirOperations][getJsonFileStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
+      this.logger.error(`[DirOperations][getReadStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
       throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
     }
   }
 
   public async getWriteStream(path: PathLike, overwrite?: boolean, buffersize?: number): Promise<IWriteStream> {
-    this.logger.info(`[DirOperations][getJsonFileStream] uploading file to path ${path as string}`);
+    this.logger.info(`[DirOperations][getWriteStream] uploading file to path ${path as string}`);
     const isFileExists = await this.checkFileExists(path);
 
     if (isFileExists && overwrite !== true) {
@@ -180,13 +180,11 @@ class DirOperations {
     stream.on('end', () => {
       const endTime = Date.now();
       const totalTime = endTime - startTime;
-      this.logger.info(
-        `[StorageExplorerController][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), of total amont of ${chunkCount} chunks`
-      );
+      this.logger.info(`[DirOperations][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), chunks: ${chunkCount}`);
     });
 
     stream.on('error', (error) => {
-      this.logger.error(`[StorageExplorerController][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
+      this.logger.error(`[DirOperations][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
     });
   };
 
@@ -207,12 +205,12 @@ class DirOperations {
       stream.on('close', () => {
         const endTime = Date.now();
         const totalTime = endTime - startTime;
-        this.logger.info(`[StorageExplorerController][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
+        this.logger.info(`[DirOperations][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
         resolve();
       });
 
       stream.on('error', (error) => {
-        this.logger.error(`[StorageExplorerController][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
+        this.logger.error(`[DirOperations][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
         const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
         reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
       });
@@ -246,14 +244,12 @@ class DirOperations {
           stream.on('finish', () => {
             const endTime = Date.now();
             const totalTime = endTime - startTime;
-            this.logger.info(
-              `[StorageExplorerController][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}, of total amont of ${chunkCount} chunks`
-            );
+            this.logger.info(`[DirOperations][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}, chunks: ${chunkCount}`);
             resolve();
           });
 
           stream.on('error', (error) => {
-            this.logger.error(`[StorageExplorerController][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
+            this.logger.error(`[DirOperations][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
             const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "dir/file not found"
             reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
           });

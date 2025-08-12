@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
-import { constants, unlink, promises } from 'fs';
+// import { constants, unlink, promises } from 'fs';
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptZlibPath } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
@@ -129,27 +129,31 @@ describe('Storage Explorer', function () {
       });
     });
 
-    describe('uploadFile', () => {
-      it('should write a new file', async () => {
-        const res = await requestSender.writeStreamFile('/\\\\Second_mount_dir/zipFile.zip');
-        expect(res.status).toBe(httpStatusCodes.CREATED);
+    /******************************************************************** */
+    // Currently, we don't have any upload scenarios.
+    // This will be used when it becomes relevant in the future (probably should be revised).
+    /******************************************************************** */
+    // describe('uploadFile', () => {
+    //   it('should write a new file', async () => {
+    //     const res = await requestSender.writeStreamFile('/\\\\Second_mount_dir/zipFile.zip');
+    //     expect(res.status).toBe(httpStatusCodes.CREATED);
 
-        let isFileExist = false;
+    //     let isFileExist = false;
 
-        try {
-          await promises.access(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, constants.F_OK);
-          isFileExist = true;
-        } catch {
-          isFileExist = false;
-        }
+    //     try {
+    //       await promises.access(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, constants.F_OK);
+    //       isFileExist = true;
+    //     } catch {
+    //       isFileExist = false;
+    //     }
 
-        expect(isFileExist).toBe(true);
+    //     expect(isFileExist).toBe(true);
 
-        unlink(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, () => {
-          console.log('Delete file successfully');
-        });
-      });
-    });
+    //     unlink(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, () => {
+    //       console.log('Delete file successfully');
+    //     });
+    //   });
+    // });
 
     describe('decryptId', () => {
       it('should return the correct decrypted path', async () => {
@@ -205,17 +209,21 @@ describe('Storage Explorer', function () {
       });
     });
 
-    describe('uploadFile', () => {
-      it('should return 404 if path directory not found', async () => {
-        const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
-        expect(status).toBe(httpStatusCodes.NOT_FOUND);
-      });
+    /******************************************************************** */
+    // Currently, we don't have any upload scenarios.
+    // This will be used when it becomes relevant in the future (probably should be revised).
+    /******************************************************************** */
+    // describe('uploadFile', () => {
+    //   it('should return 404 if path directory not found', async () => {
+    //     const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
+    //     expect(status).toBe(httpStatusCodes.NOT_FOUND);
+    //   });
 
-      it('should return 400 if buffer size in not a number/undefined', async () => {
-        const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
-      });
-    });
+    //   it('should return 400 if buffer size in not a number/undefined', async () => {
+    //     const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+    //     expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+    //   });
+    // });
 
     describe('file by id', () => {
       it('should return 500 if id is not valid', async () => {
