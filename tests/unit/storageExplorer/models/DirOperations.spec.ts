@@ -2,14 +2,16 @@
 // because of mocking res.setHeader and fakeStream.pipe
 import { createWriteStream, Dirent, ReadStream } from 'fs';
 import { EventEmitter, PassThrough } from 'stream';
-import { BadRequestError, ConflictError, NotFoundError } from '@map-colonies/error-types';
+import { BadRequestError, ConflictError, HttpError, NotFoundError } from '@map-colonies/error-types';
 import { Request, Response } from 'express';
+import { StatusCodes } from 'http-status-codes';
 import { DirOperations } from '../../../../src/common/utilities';
 import { LoggersHandler } from '../../../../src/common/utilities/LoggersHandler';
 import { ImountDirObj } from '../../../../src';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
 import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
+import { MAX_FILE_SIZE } from '../../../../src/storageExplorer/controllers/storageExplorer.controller';
 
 let dirOperations: DirOperations;
 let logger;
@@ -141,9 +143,7 @@ describe('storage explorer dirOperations', () => {
     it('should throw an error if file not exists', async () => {
       const notExistsPath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product_not_exist.json`;
 
-      const fileStreamError = async () => {
-        return dirOperations.getReadStream(notExistsPath);
-      };
+      const fileStreamError = dirOperations.getReadStream(notExistsPath);
 
       await expect(fileStreamError).rejects.toThrow(NotFoundError);
       await expect(fileStreamError).rejects.toThrow('fp.error.file_not_found');
@@ -215,12 +215,31 @@ describe('storage explorer dirOperations', () => {
         name: 'file.txt',
       });
 
-      await dirOperations.openReadStream(res, filePath, '');
+      await dirOperations.openReadStream(res, filePath, '', MAX_FILE_SIZE);
 
       expect(res.setHeader).toHaveBeenCalledWith('Content-Length', 123);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
 
       expect(fakeStream.pipe).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw an error if file size is more then 10 Mebibyte and response type not declare as stream', async () => {
+      const fakeStream = new PassThrough();
+
+      fakeStream.pipe = jest.fn().mockReturnValue(res);
+
+      const filePath = `${MOCK_FOLDER_PREFIX}/MOCKS/3D_data/1b/product.json`;
+
+      dirOperations.getReadStream = jest.fn().mockResolvedValue({
+        stream: fakeStream,
+        contentType: 'application/json',
+        size: 11534336,
+        name: 'file.txt',
+      });
+
+      await expect(dirOperations.openReadStream(res, filePath, '', MAX_FILE_SIZE)).rejects.toThrow(
+        new HttpError('Content Too Large', StatusCodes.REQUEST_TOO_LONG)
+      );
     });
   });
 

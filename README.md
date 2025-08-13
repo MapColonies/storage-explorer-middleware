@@ -61,3 +61,4 @@ You can find an example for the openapi.yaml file [here](https://github.com/MapC
 
 - For testing, you can import the StorageExplorer.postman_collection.json file into Postman to view the examples. When uploading, make sure to upload a file from your local machine.
 
+- To consume a file as a stream, you need to include the header `x-client-response-type`. Without this header, the file size limit is 10 mebibytes.

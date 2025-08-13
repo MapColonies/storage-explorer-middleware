@@ -12,7 +12,7 @@ import IFile from '../models/file.model';
 const { stat: statPromise } = fsPromises;
 
 // Should return file content by its id
-type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string }>;
+type GetFileByIdHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { id: string; buffersize?: string }>;
 
 // Should return file stream
 type GetFileHandler = RequestHandler<undefined, Record<string, unknown>, undefined, { path: string; buffersize?: string }>;
@@ -34,6 +34,12 @@ type GetDirectoryByIdHandler = RequestHandler<undefined, IFile[], undefined, { i
 // Should decrypt id to path suffix
 type DecryptIdHandler = RequestHandler<undefined, { data: string }, undefined, { id: string }>;
 
+// 10 MiB (Mebibytes) or 10 × 1024 × 1024 bytes
+export const MAX_FILE_SIZE = 10485760;
+
+// For multiple to reach 10 GiB (Gibibyte)
+export const KILO_BYTE = 1024;
+
 export class StorageExplorerController {
   public constructor(
     private readonly logger: LoggersHandler,
@@ -47,12 +53,18 @@ export class StorageExplorerController {
       if (!req.query.path || !path) {
         throw new BadRequestError('Missing path in query params');
       }
+
       const physicalPath: string = this.dirOperations.getPhysicalPath(decodeURIComponent(path));
       const buffersize = Number(req.query.buffersize);
       if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
         throw new BadRequestError('Invalid buffersize parameter: must be a number.');
       }
-      await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', buffersize);
+
+      if (req.headers['x-client-response-type'] === 'stream') {
+        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_FILE_SIZE * KILO_BYTE, buffersize);
+      } else {
+        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_FILE_SIZE, buffersize);
+      }
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
@@ -92,13 +104,22 @@ export class StorageExplorerController {
     }
   };
 
-  public getFileById: GetFileByIdHandler = async (req, res, next) => {
+  public getFileById: GetFileByIdHandler = async (req, res) => {
     try {
       const fileId: string = req.query.id;
       const pathDecrypted = await dencryptZlibPath(fileId);
-      await this.dirOperations.openReadStream(res, pathDecrypted, 'getFileById');
+
+      const buffersize = Number(req.query.buffersize);
+      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
+        throw new BadRequestError('Invalid buffersize parameter: must be a number.');
+      }
+
+      await this.dirOperations.openReadStream(res, pathDecrypted, 'getFileById', MAX_FILE_SIZE, buffersize);
     } catch (e) {
-      next(e);
+      this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
+      // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
+      // ERROR MESSAGE SHOULD LOOKS LIKE fp.error.file_not_found
+      res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: e });
     }
   };
 

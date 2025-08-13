@@ -125,7 +125,11 @@ class DirOperations {
       return streamProduct;
     } catch (e) {
       this.logger.error(`[DirOperations][getReadStream] could not create a stream for file at ${path as string}. error=${(e as Error).message}`);
-      throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
+      if (e instanceof HttpError) {
+        throw e;
+      } else {
+        throw new InternalServerError(StorageExplorerErrors.STREAM_CREATION_ERR);
+      }
     }
   }
 
@@ -160,8 +164,18 @@ class DirOperations {
     }
   }
 
-  public readonly openReadStream = async (res: Response, filePath: string, callerName: string, buffersize?: number): Promise<void> => {
+  public readonly openReadStream = async (
+    res: Response,
+    filePath: string,
+    callerName: string,
+    maxSize: number,
+    buffersize?: number
+  ): Promise<void> => {
     const { stream, contentType, size, name }: IReadStream = await this.getReadStream(filePath, buffersize);
+
+    if (size > maxSize) {
+      throw new HttpError('Content Too Large', StatusCodes.REQUEST_TOO_LONG);
+    }
 
     if (contentType !== undefined) {
       res.setHeader('Content-Type', contentType);
