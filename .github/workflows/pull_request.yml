@@ -39,4 +39,4 @@ jobs:
           node-version: ${{ matrix.node }}
 
       - name: Run TS Project linters
-        run: npx prettier -v && npm run lint
+        run: npm run lint
