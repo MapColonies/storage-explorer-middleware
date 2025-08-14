@@ -61,7 +61,7 @@ const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boo
 
 describe('storage explorer dirOperations', () => {
   beforeEach(function () {
-    logger = new LoggersHandler(console as unknown as Record<string, unknown>);
+    logger = new LoggersHandler((console as unknown) as Record<string, unknown>);
     dirOperations = new DirOperations(logger, mountDirs);
     jest.clearAllMocks();
   });
@@ -192,7 +192,7 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#openReadStream', () => {
-    const res = {
+    const res = ({
       setHeader: jest.fn().mockImplementationOnce(() => {
         console.log('setHeader');
       }),
@@ -200,7 +200,7 @@ describe('storage explorer dirOperations', () => {
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
-    } as unknown as jest.Mocked<Response>;
+    } as unknown) as jest.Mocked<Response>;
 
     it('should set headers and invoke pipe stream', async () => {
       const fakeStream = new PassThrough();
@@ -244,7 +244,7 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#openWriteStream', () => {
-    const req = {
+    const req = ({
       params: {},
       body: {},
       query: { path: '' },
@@ -254,7 +254,7 @@ describe('storage explorer dirOperations', () => {
           stream.emit('close');
         });
       }),
-    } as unknown as jest.Mocked<Request>;
+    } as unknown) as jest.Mocked<Request>;
 
     it('should invoke pipe stream', async () => {
       const fakeStream = new PassThrough();

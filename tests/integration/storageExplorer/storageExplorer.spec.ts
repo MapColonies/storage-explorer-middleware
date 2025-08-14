@@ -32,10 +32,10 @@ describe('Storage Explorer', function () {
   ];
 
   beforeEach(function () {
-    logger = console as unknown as Record<string, unknown>;
+    logger = (console as unknown) as Record<string, unknown>;
     app.use(getStorageExplorerMiddleware(mountDirs, logger));
     requestSender = new StorageExplorerRequestSender(app);
-    dirOperaions = new DirOperations(logger as unknown as LoggersHandler, mountDirs);
+    dirOperaions = new DirOperations((logger as unknown) as LoggersHandler, mountDirs);
   });
 
   afterEach(() => {
