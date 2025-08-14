@@ -1,4 +1,13 @@
-import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream, WriteStream } from 'fs';
+import {
+  promises as fsPromises,
+  Dirent,
+  PathLike,
+  createReadStream,
+  constants as fsConstants,
+  createWriteStream,
+  ReadStream,
+  WriteStream,
+} from 'node:fs';
 import * as pathLib from 'path';
 import { lookup } from '@map-colonies/types';
 import busboy from 'busboy';

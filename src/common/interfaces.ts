@@ -1,4 +1,4 @@
-import { ReadStream, WriteStream } from 'fs';
+import { ReadStream, WriteStream } from 'node:fs';
 
 export interface IStream<T> {
   stream: T;

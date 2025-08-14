@@ -1,4 +1,4 @@
-// import { constants, unlink, promises } from 'fs';
+// import { constants, unlink, promises } from 'node:fs';
 import httpStatusCodes from 'http-status-codes';
 import { DirOperations, encryptZlibPath, LoggersHandler } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';

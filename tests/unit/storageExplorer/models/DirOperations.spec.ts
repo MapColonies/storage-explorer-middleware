@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 // because of mocking res.setHeader and fakeStream.pipe
-import { createWriteStream, Dirent, ReadStream } from 'fs';
+import { createWriteStream, Dirent, ReadStream } from 'node:fs';
 import { EventEmitter, PassThrough } from 'stream';
-import * as fs from 'fs';
+import * as fs from 'node:fs';
 import { BadRequestError, ConflictError, HttpError, NotFoundError } from '@map-colonies/error-types';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -37,9 +37,9 @@ const mockWriteStream: fs.WriteStream = {
   on: jest.fn(),
 } as unknown as fs.WriteStream;
 
-jest.mock('fs', (): typeof import('fs') => {
+jest.mock('node:fs', (): typeof import('node:fs') => {
   return {
-    ...jest.requireActual('fs'),
+    ...jest.requireActual('node:fs'),
     createWriteStream: jest.fn(() => mockWriteStream),
   };
 });

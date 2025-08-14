@@ -1,4 +1,4 @@
-import { Dirent, promises as fsPromises } from 'fs';
+import { Dirent, promises as fsPromises } from 'node:fs';
 import path from 'path';
 import { BadRequestError, HttpError } from '@map-colonies/error-types';
 import { RequestHandler, Request } from 'express';
