@@ -1,11 +1,11 @@
-import express from 'express';
+import express, { json } from 'express';
 import getStorageExplorerMiddleware from '../src/storageExplorer/middlewares/getStorageExplorerMiddleware';
 import { MOCK_FOLDER_PREFIX } from '../tests/MOCKS/utils';
 
 const app = express();
 const PORT = 5656;
 
-app.use(express.json());
+app.use(json());
 
 const mountDirs = [
   {
@@ -23,7 +23,7 @@ const mountDirs = [
   },
 ];
 
-const logger = (console as unknown) as Record<string, unknown>;
+const logger = console as unknown as Record<string, unknown>;
 app.use(getStorageExplorerMiddleware(mountDirs, logger));
 
 app.listen(PORT, () => {

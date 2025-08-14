@@ -12,6 +12,6 @@
     "noEmit": true,
     "esModuleInterop": true,
   },
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "server"],
   "exclude": ["dist", "node_modules"]
 }

@@ -2,6 +2,7 @@
 // because of mocking res.setHeader and fakeStream.pipe
 import { createWriteStream, Dirent, ReadStream } from 'fs';
 import { EventEmitter, PassThrough } from 'stream';
+import * as fs from 'fs';
 import { BadRequestError, ConflictError, HttpError, NotFoundError } from '@map-colonies/error-types';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -30,14 +31,18 @@ const mountDirs: ImountDirObj[] = [
   },
 ];
 
-jest.mock('fs', () => ({
-  ...jest.requireActual('fs'),
-  createWriteStream: jest.fn(() => ({
-    write: jest.fn(),
-    end: jest.fn(),
-    on: jest.fn(),
-  })),
-}));
+const mockWriteStream: fs.WriteStream = {
+  write: jest.fn(),
+  end: jest.fn(),
+  on: jest.fn(),
+} as unknown as fs.WriteStream;
+
+jest.mock('fs', (): typeof import('fs') => {
+  return {
+    ...jest.requireActual('fs'),
+    createWriteStream: jest.fn(() => mockWriteStream),
+  };
+});
 
 const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boolean) => {
   const currentMountDir = mountDirs.find((mount) => (path + '/').startsWith(`${mount.physical}/`));
@@ -51,7 +56,6 @@ const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boo
     const { name } = file;
     const fileExt = file.name.split('.')[1];
     if (typeof currentMountDir.includeFilesExt !== 'undefined' && !file.isDirectory()) {
-      // eslint-disable-next-line
       return currentMountDir.includeFilesExt.includes(fileExt) || name === 'metadata.json';
     }
 
@@ -61,7 +65,7 @@ const getFilterUnsupportedExtFunction = (path: string): ((dirent: Dirent) => boo
 
 describe('storage explorer dirOperations', () => {
   beforeEach(function () {
-    logger = new LoggersHandler((console as unknown) as Record<string, unknown>);
+    logger = new LoggersHandler(console as unknown as Record<string, unknown>);
     dirOperations = new DirOperations(logger, mountDirs);
     jest.clearAllMocks();
   });
@@ -192,7 +196,7 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#openReadStream', () => {
-    const res = ({
+    const res = {
       setHeader: jest.fn().mockImplementationOnce(() => {
         console.log('setHeader');
       }),
@@ -200,7 +204,7 @@ describe('storage explorer dirOperations', () => {
       on: jest.fn(),
       once: jest.fn(),
       emit: jest.fn(),
-    } as unknown) as jest.Mocked<Response>;
+    } as unknown as jest.Mocked<Response>;
 
     it('should set headers and invoke pipe stream', async () => {
       const fakeStream = new PassThrough();
@@ -244,7 +248,7 @@ describe('storage explorer dirOperations', () => {
   });
 
   describe('#openWriteStream', () => {
-    const req = ({
+    const req = {
       params: {},
       body: {},
       query: { path: '' },
@@ -254,7 +258,7 @@ describe('storage explorer dirOperations', () => {
           stream.emit('close');
         });
       }),
-    } as unknown) as jest.Mocked<Request>;
+    } as unknown as jest.Mocked<Request>;
 
     it('should invoke pipe stream', async () => {
       const fakeStream = new PassThrough();

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 export const generateRootDirSnap = [
   {
     id: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',

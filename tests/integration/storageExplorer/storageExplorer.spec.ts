@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 // import { constants, unlink, promises } from 'fs';
 import httpStatusCodes from 'http-status-codes';
-import { DirOperations, encryptZlibPath } from '../../../src/common/utilities';
+import { DirOperations, encryptZlibPath, LoggersHandler } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
-import { LoggersHandler } from '../../../src/common/utilities';
 import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
 import { StorageExplorerRequestSender } from './helpers/requestSender';
 import { innerDirSnap, rootDirSnap } from './snapshots/directory';
@@ -32,10 +30,10 @@ describe('Storage Explorer', function () {
   ];
 
   beforeEach(function () {
-    logger = (console as unknown) as Record<string, unknown>;
+    logger = console as unknown as Record<string, unknown>;
     app.use(getStorageExplorerMiddleware(mountDirs, logger));
     requestSender = new StorageExplorerRequestSender(app);
-    dirOperaions = new DirOperations((logger as unknown) as LoggersHandler, mountDirs);
+    dirOperaions = new DirOperations(logger as unknown as LoggersHandler, mountDirs);
   });
 
   afterEach(() => {

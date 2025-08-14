@@ -75,7 +75,7 @@ export const encryptZlibPath = async (path: string): Promise<string> => {
     const deflateBuffer = await deflatePromise(path);
 
     return urlEncodeBase64(deflateBuffer.toString('base64'));
-  } catch (e) {
+  } catch {
     throw new InternalServerError("Couldn't encrypt the provided id");
   }
 };
@@ -86,7 +86,7 @@ export const dencryptZlibPath = async (encryptPath: string): Promise<string> => 
     const inflateBuffer = await inflatePromise(Buffer.from(decodedEncryptedPath, 'base64'));
 
     return inflateBuffer.toString('utf8');
-  } catch (e) {
+  } catch {
     throw new InternalServerError("Couldn't decrypt the provided id");
   }
 };

@@ -1,12 +1,11 @@
-/* eslint-disable import/exports-last */
 import { Dirent, promises as fsPromises } from 'fs';
 import path from 'path';
 import { BadRequestError, HttpError } from '@map-colonies/error-types';
 import { RequestHandler, Request } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import { DirOperations, encryptZlibPath, dencryptZlibPath } from '../../common/utilities';
+import { DirOperations, encryptZlibPath, dencryptZlibPath, LoggersHandler } from '../../common/utilities';
 import { ImountDirObj } from '../../common/interfaces';
-import { LoggersHandler } from '../../common/utilities';
+/* eslint-disable @typescript-eslint/naming-convention */
 import IFile from '../models/file.model';
 
 const { stat: statPromise } = fsPromises;
@@ -33,6 +32,26 @@ type GetDirectoryByIdHandler = RequestHandler<undefined, IFile[], undefined, { i
 
 // Should decrypt id to path suffix
 type DecryptIdHandler = RequestHandler<undefined, { data: string }, undefined, { id: string }>;
+
+const getFileData = async (filePath: string, parentPathEncrypted: string, entry: Dirent): Promise<IFile> => {
+  const fileStats = await statPromise(path.join(filePath, entry.name));
+  const encryptedPath = await encryptZlibPath(path.join(filePath, entry.name));
+
+  const fileFromEntry: IFile = {
+    id: encryptedPath,
+    name: entry.name,
+    isDir: entry.isDirectory(),
+    parentId: parentPathEncrypted,
+    size: fileStats.size,
+    modDate: fileStats.mtime,
+  };
+
+  if (fileFromEntry.isDir) {
+    delete fileFromEntry.size;
+  }
+
+  return fileFromEntry;
+};
 
 // 10 MiB (Mebibytes) or 10 × 1024 × 1024 bytes
 export const MAX_FILE_SIZE = 10485760;
@@ -190,23 +209,3 @@ export class StorageExplorerController {
     return dirContentArr;
   };
 }
-
-const getFileData = async (filePath: string, parentPathEncrypted: string, entry: Dirent): Promise<IFile> => {
-  const fileStats = await statPromise(path.join(filePath, entry.name));
-  const encryptedPath = await encryptZlibPath(path.join(filePath, entry.name));
-
-  const fileFromEntry: IFile = {
-    id: encryptedPath,
-    name: entry.name,
-    isDir: entry.isDirectory(),
-    parentId: parentPathEncrypted,
-    size: fileStats.size,
-    modDate: fileStats.mtime,
-  };
-
-  if (fileFromEntry.isDir) {
-    delete fileFromEntry.size;
-  }
-
-  return fileFromEntry;
-};

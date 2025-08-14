@@ -1,14 +1,14 @@
 import { promises as fsPromises, Dirent, PathLike, createReadStream, constants as fsConstants, createWriteStream, ReadStream, WriteStream } from 'fs';
-import * as Path from 'path';
+import * as pathLib from 'path';
 import { lookup } from '@map-colonies/types';
 import busboy from 'busboy';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, NotFoundError, InternalServerError, ConflictError, HttpError } from '@map-colonies/error-types';
 import { ImountDirObj, IReadStream, IWriteStream } from '../interfaces';
+/* eslint-disable @typescript-eslint/naming-convention */
 import IFile from '../../storageExplorer/models/file.model';
-import { LoggersHandler } from '.';
-import { encryptZlibPath } from '.';
+import { encryptZlibPath, LoggersHandler } from '.';
 
 const { stat: statPromise, access: existsPromise } = fsPromises;
 
@@ -20,12 +20,15 @@ enum StorageExplorerErrors {
   PATH_INVALID = 'fp.error.path_invalid',
 }
 class DirOperations {
-  public constructor(private readonly logger: LoggersHandler, private readonly mountDirs: ImountDirObj[]) {}
+  public constructor(
+    private readonly logger: LoggersHandler,
+    private readonly mountDirs: ImountDirObj[]
+  ) {}
 
   // get physical name or regular name
   public getPhysicalPath(path: string): string {
     this.logger.info(`[DirOperations][getPhysicalPath] getting physical path for ${path}`);
-    const safePath = Path.normalize(path.replace(/^\/\\(?!\\)/g, '/\\\\'));
+    const safePath = pathLib.normalize(path.replace(/^\/\\(?!\\)/g, '/\\\\'));
 
     if (safePath.startsWith('.')) {
       throw new BadRequestError(StorageExplorerErrors.PATH_INVALID);
@@ -111,7 +114,7 @@ class DirOperations {
         stream = createReadStream(path);
       }
       const { size } = await statPromise(path);
-      const fileName = Path.basename(path as string);
+      const fileName = pathLib.basename(path as string);
 
       const mimeType = lookup(path as string);
 
@@ -150,7 +153,7 @@ class DirOperations {
         stream = createWriteStream(path);
       }
 
-      const fileName = Path.basename(path as string);
+      const fileName = pathLib.basename(path as string);
 
       const streamProduct: IWriteStream = {
         stream,

@@ -5,12 +5,12 @@ export interface IStream<T> {
   name: string;
 }
 
-export interface IReadStream extends IStream<ReadStream> {
+export type IReadStream = IStream<ReadStream> & {
   contentType: string | undefined;
   size: number;
-}
+};
 
-export interface IWriteStream extends IStream<WriteStream> {}
+export type IWriteStream = IStream<WriteStream>;
 
 export interface ImountDirObj {
   physical: string;
