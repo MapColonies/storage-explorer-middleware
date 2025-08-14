@@ -11,3 +11,4 @@ tsconfig.json
 coverage
 reports
 docs
+tests/MOCKS
