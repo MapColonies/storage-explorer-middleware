@@ -72,7 +72,7 @@
   },
   "dependencies": {
     "@map-colonies/error-types": "^1.1.0",
-    "@map-colonies/js-logger": "^2.0.0",
+    "@map-colonies/js-logger": "^3.0.2",
     "@map-colonies/types": "^1.7.0",
     "busboy": "^1.6.0",
     "config": "^3.3.7",
