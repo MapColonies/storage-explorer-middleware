@@ -1,4 +1,4 @@
-import { constants, unlink, promises } from 'node:fs';
+// import { constants, unlink, promises } from 'node:fs';
 import path from 'path';
 import httpStatusCodes from 'http-status-codes';
 import jestOpenAPI from 'jest-openapi';
@@ -12,6 +12,10 @@ import { decryptedIdRes } from './snapshots/decryptId';
 import { app, server } from './helpers/server_test';
 
 jestOpenAPI(path.join(__dirname, '../../../examples-files/openapi3.yaml'));
+
+const bufferToString = (buffer: number[]) => {
+  return String.fromCharCode(...buffer);
+};
 
 describe('Storage Explorer', function () {
   let dirOperaions: DirOperations;
@@ -52,6 +56,7 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return root dir when requested root traversal', async () => {
@@ -60,6 +65,7 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return data of inner directories', async () => {
@@ -68,6 +74,7 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return root dir by id and match snapshot from mock', async () => {
@@ -76,6 +83,7 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return data of inner directories by id', async () => {
@@ -84,51 +92,58 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(innerDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
+        expect(res).toSatisfyApiSpec();
       });
     });
 
     describe('file', () => {
       it('should return file content and match snapshot from mock', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json');
-        expect(res.type).toBe('application/json');
+        expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(fileData);
+        expect(JSON.parse(bufferToString(res.body as number[]))).toMatchObject(fileData);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 200 when sending buffer size parameter', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json', '1000000');
-        expect(res.type).toBe('application/json');
+        expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(fileData);
+        expect(JSON.parse(bufferToString(res.body as number[]))).toMatchObject(fileData);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return file content by id and match snapshot from mock', async () => {
         const physicalPath = dirOperaions.getPhysicalPath('/\\\\First_mount_dir/3D_data/1b/product.json');
         const encryptedNotJsonPath = await encryptZlibPath(physicalPath);
         const res = await requestSender.getFileById(encryptedNotJsonPath);
-        expect(res.type).toBe('application/json');
+        expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
-        expect(res.body).toMatchObject(fileData);
+        expect(JSON.parse(bufferToString(res.body as number[]))).toMatchObject(fileData);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 200 for a MIME text file', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/text.txt');
-        expect(res.type).toBe('text/plain');
+        expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
+        expect(bufferToString(res.body as number[])).toMatch('Txt file test');
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 200 for a MIME ZIP file', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip');
-        expect(res.type).toBe('application/zip');
+        expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res).toSatisfyApiSpec();
       });
 
       it(`should return the file content when file extension is missing`, async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/textFileWithoutSuffix');
-        expect(res.text).toBe('just a file');
+        expect(res.body).toBeInstanceOf(Buffer);
         expect((res.headers as { contentType?: string }).contentType).toBeUndefined();
         expect(res.status).toBe(httpStatusCodes.OK);
+        expect(bufferToString(res.body as number[])).toMatch('just a file');
         expect(res).toSatisfyApiSpec();
       });
     });
@@ -167,39 +182,42 @@ describe('Storage Explorer', function () {
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res.body).toMatchObject(decryptedIdRes);
+        expect(res).toSatisfyApiSpec();
       });
     });
   });
 
   describe('given invalid params', () => {
     describe('directory', () => {
-      it('should return 400 if path not found', async () => {
-        const { status } = await requestSender.getDirectory('/\\\\First_mount_dir/3D_data/1b/3b');
-        expect(status).toBe(httpStatusCodes.NOT_FOUND);
+      it('should return 400 if a file path supplied', async () => {
+        const res = await requestSender.getDirectory('/\\\\First_mount_dir/3D_data/1b/metadata.json');
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res).toSatisfyApiSpec();
       });
 
-      it('should return 400 if a file path supplied', async () => {
-        const { status } = await requestSender.getDirectory('/\\\\First_mount_dir/3D_data/1b/metadata.json');
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+      it('should return 404 if path not found', async () => {
+        const res = await requestSender.getDirectory('/\\\\First_mount_dir/3D_data/1b/3b');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 500 if required query not provided', async () => {
-        const { status } = await requestSender.getDirectoryWithoutQuery();
+        const res = await requestSender.getDirectoryWithoutQuery();
         // When connecting to a real server there's open api which should handle these errors
         // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
       });
 
       it('should return 400 for invalid path (Directories traversal)', async () => {
-        const { status } = await requestSender.getDirectory('../../../');
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+        const res = await requestSender.getDirectory('../../../');
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
       });
     });
 
     describe('file', () => {
       it('should return 404 if path not found', async () => {
-        const { status } = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
-        expect(status).toBe(httpStatusCodes.NOT_FOUND);
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
       });
 
       it('should return 400 if required query not provided', async () => {
@@ -210,8 +228,8 @@ describe('Storage Explorer', function () {
       });
 
       it('should return 400 if buffer size in not a number/undefined', async () => {
-        const { status } = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
       });
     });
 
@@ -235,42 +253,46 @@ describe('Storage Explorer', function () {
 
     describe('file by id', () => {
       it('should return 500 if id is not valid', async () => {
-        const { status } = await requestSender.getFileById('iYl0xZ28wqXUIZ_pP_XU0v0i0EhFUpjD1QzJQsD7hO9.dPkcbmbb4pbPjUyek6');
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        const res = await requestSender.getFileById('iYl0xZ28wqXUIZ_pP_XU0v0i0EhFUpjD1QzJQsD7hO9.dPkcbmbb4pbPjUyek6');
+        expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 500 if required query not provided', async () => {
-        const { status } = await requestSender.getFileByIdWithoutQuery();
+        const res = await requestSender.getFileByIdWithoutQuery();
         // When connecting to a real server there's open api which should handle these errors
         // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res).toSatisfyApiSpec();
       });
     });
 
     describe('decryptId', () => {
       it('should return 500 if id is not valid', async () => {
-        const { status } = await requestSender.getDecryptedId('iYl0xZ28wqXUIZ_pP_XU0v0i0EhFUpjD1QzJQsD7hO9.dPkcbmbb4pbPjUyek6');
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        const res = await requestSender.getDecryptedId('iYl0xZ28wqXUIZ_pP_XU0v0i0EhFUpjD1QzJQsD7hO9.dPkcbmbb4pbPjUyek6');
+        expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 500 if required query not provided', async () => {
-        const { status } = await requestSender.getDecryptedIdWithoutQuery();
+        const res = await requestSender.getDecryptedIdWithoutQuery();
         // When connecting to a real server ther's open api which should handle these errors
         // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
-        expect(status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res).toSatisfyApiSpec();
       });
     });
   });
 
   describe('given invalid route', function () {
     it('should return 404', async () => {
-      const { status } = await requestSender.getNoValidRoute();
-      expect(status).toBe(httpStatusCodes.NOT_FOUND);
+      const res = await requestSender.getNoValidRoute();
+      expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
     });
 
     it('should also return 404 for main route', async () => {
-      const { status } = await requestSender.getNoValidUrl();
-      expect(status).toBe(httpStatusCodes.NOT_FOUND);
+      const res = await requestSender.getNoValidUrl();
+      expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
     });
   });
 });

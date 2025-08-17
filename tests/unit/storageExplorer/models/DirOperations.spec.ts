@@ -222,7 +222,7 @@ describe('storage explorer dirOperations', () => {
       await dirOperations.openReadStream(res, filePath, '', MAX_FILE_SIZE);
 
       expect(res.setHeader).toHaveBeenCalledWith('Content-Length', 123);
-      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/octet-stream');
 
       expect(fakeStream.pipe).toHaveBeenCalledTimes(1);
     });

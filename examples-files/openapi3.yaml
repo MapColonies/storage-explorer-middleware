@@ -25,7 +25,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/res'
+                $ref: '#/components/schemas/dirRes'
+        400:
+          description: BAD REQUEST
+          content:
+            text/html:
+              schema:
+                type: string
+        404:
+          description: NOT FOUND
+          content:
+            text/html:
+              schema:
+                type: string
         500:
           description: INTERNAL SERVER ERROR
           content:
@@ -50,7 +62,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/res'
+                $ref: '#/components/schemas/dirRes'
         500:
           description: INTERNAL SERVER ERROR
           content:
@@ -82,7 +94,7 @@ paths:
           content:
             'application/octet-stream':
               schema:
-                type: string
+                type: object
                 format: binary
         400:
           description: BAD REQUEST
@@ -213,19 +225,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/res'
-        500:
-          description: INTERNAL SERVER ERROR
+        404:
+          description: NOT FOUND
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            text/html:
+              schema:
+                type: string
+
 components:
   schemas:
     res:
       type: object
       properties:
         data:
-          type: object
+          oneOf:
+            - type: object
+            - type: string
+    dirRes:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          isDir:
+            type: boolean
+          parentId:
+            type: string
+          modDate:
+            type: string
+            format: date-time
     error:
       type: object
       properties:

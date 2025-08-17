@@ -19,7 +19,7 @@ export class StorageExplorerRequestSender {
 
   public async getStreamFile(path: string, buffersize?: string): Promise<supertest.Response> {
     const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
-    return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`);
+    return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`).buffer();
   }
 
   public async writeStreamFile(path: string, buffersize?: string): Promise<supertest.Response> {

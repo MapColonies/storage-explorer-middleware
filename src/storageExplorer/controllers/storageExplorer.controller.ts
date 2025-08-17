@@ -138,7 +138,7 @@ export class StorageExplorerController {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
       // ERROR MESSAGE SHOULD LOOKS LIKE fp.error.file_not_found
-      res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: e });
+      res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: (e as HttpError).message || 'An error occurred' });
     }
   };
 

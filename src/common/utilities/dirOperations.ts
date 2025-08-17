@@ -184,14 +184,17 @@ class DirOperations {
     buffersize?: number
   ): Promise<void> => {
     const { stream, contentType, size, name }: IReadStream = await this.getReadStream(filePath, buffersize);
+    // contentType: might be used if needed (extracted according to file extension)
 
     if (size > maxSize) {
       throw new HttpError('Content Too Large', StatusCodes.REQUEST_TOO_LONG);
     }
 
-    if (contentType !== undefined) {
-      res.setHeader('Content-Type', contentType);
-    }
+    const pathComponents = filePath.split(/[/\\]/);
+    const contentDisposition = pathComponents[pathComponents.length - 1];
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${contentDisposition}"`);
     res.setHeader('Content-Length', size);
 
     const startTime = Date.now();
