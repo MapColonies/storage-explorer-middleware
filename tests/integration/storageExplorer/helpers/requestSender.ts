@@ -1,4 +1,4 @@
-import * as pathModule from 'path';
+import * as pathModule from 'node:path';
 import * as supertest from 'supertest';
 import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
 

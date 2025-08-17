@@ -1,5 +1,5 @@
 import { Dirent, promises as fsPromises } from 'node:fs';
-import path from 'path';
+import path from 'node:path';
 import { BadRequestError, HttpError } from '@map-colonies/error-types';
 import { RequestHandler, Request } from 'express';
 import { StatusCodes } from 'http-status-codes';

@@ -41,9 +41,9 @@ paths:
         500:
           description: INTERNAL SERVER ERROR
           content:
-            application/json:
+            text/html:
               schema:
-                $ref: '#/components/schemas/error'
+                type: string
 
   /explorer/directorybyid:
     get:

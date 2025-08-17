@@ -1,5 +1,5 @@
 // import { constants, unlink, promises } from 'node:fs';
-import path from 'path';
+import path from 'node:path';
 import httpStatusCodes from 'http-status-codes';
 import jestOpenAPI from 'jest-openapi';
 import { DirOperations, encryptZlibPath, LoggersHandler } from '../../../src/common/utilities';
@@ -206,11 +206,13 @@ describe('Storage Explorer', function () {
         // When connecting to a real server there's open api which should handle these errors
         // expect(status).toBe(httpStatusCodes.BAD_REQUEST);
         expect(res.status).toBe(httpStatusCodes.INTERNAL_SERVER_ERROR);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 400 for invalid path (Directories traversal)', async () => {
         const res = await requestSender.getDirectory('../../../');
         expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res).toSatisfyApiSpec();
       });
     });
 
@@ -218,6 +220,7 @@ describe('Storage Explorer', function () {
       it('should return 404 if path not found', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
         expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 400 if required query not provided', async () => {
@@ -230,6 +233,7 @@ describe('Storage Explorer', function () {
       it('should return 400 if buffer size in not a number/undefined', async () => {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
         expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res).toSatisfyApiSpec();
       });
     });
 

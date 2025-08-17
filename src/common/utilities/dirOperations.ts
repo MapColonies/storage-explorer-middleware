@@ -8,7 +8,7 @@ import {
   ReadStream,
   WriteStream,
 } from 'node:fs';
-import * as pathLib from 'path';
+import * as pathLib from 'node:path';
 import { lookup } from '@map-colonies/types';
 import busboy from 'busboy';
 import { Request, Response } from 'express';
