@@ -1,4 +1,5 @@
 import express, { json } from 'express';
+import jsLogger from '@map-colonies/js-logger';
 import getStorageExplorerMiddleware from '../src/storageExplorer/middlewares/getStorageExplorerMiddleware';
 import { MOCK_FOLDER_PREFIX } from '../tests/MOCKS/utils';
 
@@ -23,7 +24,7 @@ const mountDirs = [
   },
 ];
 
-const logger = console as unknown as Record<string, unknown>;
+const logger = jsLogger() as unknown as Record<string, unknown>;
 app.use(getStorageExplorerMiddleware(mountDirs, logger));
 
 app.listen(PORT, () => {

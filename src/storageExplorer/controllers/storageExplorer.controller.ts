@@ -117,7 +117,7 @@ export class StorageExplorerController {
         await this.dirOperations.openWriteStream(req as Request, physicalPath, 'writeStreamFile', overwrite, buffersize);
       }
 
-      res.status(StatusCodes.CREATED).send();
+      res.status(StatusCodes.CREATED).json({});
     } catch (e) {
       res.status((e as HttpError).status || StatusCodes.INTERNAL_SERVER_ERROR).send({ error: e });
     }

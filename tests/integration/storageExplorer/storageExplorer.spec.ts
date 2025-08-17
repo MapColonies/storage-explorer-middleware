@@ -1,5 +1,7 @@
-// import { constants, unlink, promises } from 'node:fs';
+import { constants, unlink, promises } from 'node:fs';
+import path from 'path';
 import httpStatusCodes from 'http-status-codes';
+import jestOpenAPI from 'jest-openapi';
 import { DirOperations, encryptZlibPath, LoggersHandler } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
 import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
@@ -8,6 +10,8 @@ import { innerDirSnap, rootDirSnap } from './snapshots/directory';
 import { fileData } from './snapshots/file';
 import { decryptedIdRes } from './snapshots/decryptId';
 import { app, server } from './helpers/server_test';
+
+jestOpenAPI(path.join(__dirname, '../../../examples-files/openapi3.yaml'));
 
 describe('Storage Explorer', function () {
   let dirOperaions: DirOperations;
@@ -117,6 +121,7 @@ describe('Storage Explorer', function () {
         const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip');
         expect(res.type).toBe('application/zip');
         expect(res.status).toBe(httpStatusCodes.OK);
+        expect(res).toSatisfyApiSpec();
       });
 
       it(`should return the file content when file extension is missing`, async () => {
@@ -124,6 +129,7 @@ describe('Storage Explorer', function () {
         expect(res.text).toBe('just a file');
         expect((res.headers as { contentType?: string }).contentType).toBeUndefined();
         expect(res.status).toBe(httpStatusCodes.OK);
+        expect(res).toSatisfyApiSpec();
       });
     });
 
@@ -145,11 +151,12 @@ describe('Storage Explorer', function () {
     //       isFileExist = false;
     //     }
 
-    //     expect(isFileExist).toBe(true);
-
     //     unlink(`${MOCK_FOLDER_PREFIX}/MOCKS_2/zipFile.zip`, () => {
     //       console.log('Delete file successfully');
     //     });
+
+    //     expect(res).toSatisfyApiSpec();
+    //     expect(isFileExist).toBe(true);
     //   });
     // });
 
@@ -196,9 +203,10 @@ describe('Storage Explorer', function () {
       });
 
       it('should return 400 if required query not provided', async () => {
-        const { status } = await requestSender.getFileWithoutQuery();
+        const res = await requestSender.getFileWithoutQuery();
         // When connecting to a real server there's open api which should handle these errors
-        expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res).toSatisfyApiSpec();
       });
 
       it('should return 400 if buffer size in not a number/undefined', async () => {
@@ -213,13 +221,15 @@ describe('Storage Explorer', function () {
     /******************************************************************** */
     // describe('uploadFile', () => {
     //   it('should return 404 if path directory not found', async () => {
-    //     const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
-    //     expect(status).toBe(httpStatusCodes.NOT_FOUND);
+    //     const res = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
+    //     expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+    //     expect(res).toSatisfyApiSpec();
     //   });
 
     //   it('should return 400 if buffer size in not a number/undefined', async () => {
-    //     const { status } = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
-    //     expect(status).toBe(httpStatusCodes.BAD_REQUEST);
+    //     const res = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+    //     expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+    //     expect(res).toSatisfyApiSpec();
     //   });
     // });
 
