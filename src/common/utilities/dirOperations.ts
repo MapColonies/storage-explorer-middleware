@@ -183,6 +183,7 @@ class DirOperations {
     maxSize: number,
     buffersize?: number
   ): Promise<void> => {
+    /* eslint-disable @typescript-eslint/no-unused-vars */
     const { stream, contentType, size, name }: IReadStream = await this.getReadStream(filePath, buffersize);
     // contentType: might be used if needed (extracted according to file extension)
 
