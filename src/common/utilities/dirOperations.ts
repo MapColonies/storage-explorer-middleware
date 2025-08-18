@@ -201,8 +201,6 @@ class DirOperations {
     const startTime = Date.now();
     let chunkCount = 0;
 
-    stream.pipe(res);
-
     stream.on('data', () => {
       chunkCount++;
     });
@@ -216,6 +214,8 @@ class DirOperations {
     stream.on('error', (error) => {
       this.logger.error(`[DirOperations][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
     });
+
+    stream.pipe(res);
   };
 
   public readonly openWriteStream = async (
@@ -230,8 +230,6 @@ class DirOperations {
     const startTime = Date.now();
 
     return new Promise((resolve, reject) => {
-      req.pipe(stream);
-
       stream.on('close', () => {
         const endTime = Date.now();
         const totalTime = endTime - startTime;
@@ -244,6 +242,8 @@ class DirOperations {
         const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
         reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
       });
+
+      req.pipe(stream);
     });
   };
 
@@ -265,8 +265,6 @@ class DirOperations {
         (async (): Promise<void> => {
           const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
 
-          file.pipe(stream);
-
           file.on('data', () => {
             chunkCount++;
           });
@@ -283,6 +281,8 @@ class DirOperations {
             const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "dir/file not found"
             reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
           });
+
+          file.pipe(stream);
         })().catch((error) => {
           bb.emit('error', error);
         });
