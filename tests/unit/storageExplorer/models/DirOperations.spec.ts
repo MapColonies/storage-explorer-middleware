@@ -12,7 +12,7 @@ import { ImountDirObj } from '../../../../src';
 import { fileStreamSnap, generateRootDirSnap } from '../snapshots';
 import { streamToString } from '../utils';
 import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
-import { MAX_FILE_SIZE } from '../../../../src/storageExplorer/controllers/storageExplorer.controller';
+import { MAX_BUFFER_SIZE } from '../../../../src/storageExplorer/controllers/storageExplorer.controller';
 
 let dirOperations: DirOperations;
 let logger;
@@ -219,7 +219,7 @@ describe('storage explorer dirOperations', () => {
         name: 'file.txt',
       });
 
-      await dirOperations.openReadStream(res, filePath, '', MAX_FILE_SIZE);
+      await dirOperations.openReadStream(res, filePath, '', MAX_BUFFER_SIZE);
 
       expect(res.setHeader).toHaveBeenCalledWith('Content-Length', 123);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/octet-stream');
@@ -241,7 +241,7 @@ describe('storage explorer dirOperations', () => {
         name: 'file.txt',
       });
 
-      await expect(dirOperations.openReadStream(res, filePath, '', MAX_FILE_SIZE)).rejects.toThrow(
+      await expect(dirOperations.openReadStream(res, filePath, '', MAX_BUFFER_SIZE)).rejects.toThrow(
         new HttpError('Content Too Large', StatusCodes.REQUEST_TOO_LONG)
       );
     });

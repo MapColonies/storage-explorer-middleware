@@ -52,6 +52,7 @@ Simply connect the middleware to your server instance and pass the required para
     ]
     , this.logger))
 
+Set the `STORAGE_EXPLORER_BUFFER_SIZE` environment variable to configure the buffer size for receiving files. If unset, the default is 10 MiB.
 
 ***Notes***
 
@@ -59,7 +60,7 @@ Simply connect the middleware to your server instance and pass the required para
 *(You can also add it to the ignore path regex to exclude explorer routes from the validations)*
 You can find an example for the openapi.yaml file [here](https://github.com/MapColonies/storage-explorer-middleware/blob/master/examples-files/openapi3.yaml).
 
-- To consume a file as a stream, include the `x-client-response-type` header in your request. Without this header, the file size is limited to 10 mebibytes.
+- To consume a file as a stream, include the `x-client-response-type` header in your request. Without this header, the file size is limited to 10 MiB.
 
 For testing:
 - Use Node.js version 20 or 22.

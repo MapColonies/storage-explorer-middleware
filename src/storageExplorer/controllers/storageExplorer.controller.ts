@@ -53,8 +53,10 @@ const getFileData = async (filePath: string, parentPathEncrypted: string, entry:
   return fileFromEntry;
 };
 
-// 10 MiB (Mebibytes) or 10 × 1024 × 1024 bytes
-export const MAX_FILE_SIZE = 10485760;
+const MiB = 1048576;
+const bufferSizeEnv = Number(process.env.STORAGE_EXPLORER_BUFFER_SIZE);
+// eslint-disable-next-line @typescript-eslint/no-magic-numbers
+export const MAX_BUFFER_SIZE = Number.isFinite(bufferSizeEnv) ? bufferSizeEnv : MiB * 10;
 
 // For multiple to reach 10 GiB (Gibibyte)
 export const KILO_BYTE = 1024;
@@ -75,14 +77,17 @@ export class StorageExplorerController {
 
       const physicalPath: string = this.dirOperations.getPhysicalPath(decodeURIComponent(path));
       const buffersize = Number(req.query.buffersize);
-      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
-        throw new BadRequestError('Invalid buffersize parameter: must be a number.');
+
+      if (req.query.buffersize !== undefined && !(buffersize > 0)) {
+        throw new BadRequestError('Invalid buffersize parameter: must be a positive number.');
+      } else if (buffersize > MAX_BUFFER_SIZE) {
+        throw new BadRequestError(`Invalid buffersize parameter: must be lower then ${MAX_BUFFER_SIZE}.`);
       }
 
       if (req.headers['x-client-response-type'] === 'stream') {
-        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_FILE_SIZE * KILO_BYTE, buffersize);
+        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_BUFFER_SIZE * KILO_BYTE, buffersize);
       } else {
-        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_FILE_SIZE, buffersize);
+        await this.dirOperations.openReadStream(res, physicalPath, 'getStreamFile', MAX_BUFFER_SIZE, buffersize);
       }
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
@@ -105,7 +110,7 @@ export class StorageExplorerController {
       const physicalPath = this.dirOperations.getPhysicalPath(path);
       const buffersize = Number(req.query.buffersize);
 
-      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
+      if (req.query.buffersize !== undefined && !(buffersize > 0)) {
         throw new BadRequestError('Invalid buffersize parameter: must be a number.');
       }
 
@@ -129,11 +134,11 @@ export class StorageExplorerController {
       const pathDecrypted = await dencryptZlibPath(fileId);
 
       const buffersize = Number(req.query.buffersize);
-      if (req.query.buffersize !== undefined && Number.isNaN(buffersize)) {
+      if (req.query.buffersize !== undefined && !(buffersize > 0)) {
         throw new BadRequestError('Invalid buffersize parameter: must be a number.');
       }
 
-      await this.dirOperations.openReadStream(res, pathDecrypted, 'getFileById', MAX_FILE_SIZE, buffersize);
+      await this.dirOperations.openReadStream(res, pathDecrypted, 'getFileById', MAX_BUFFER_SIZE, buffersize);
     } catch (e) {
       this.logger.error(`[StorageExplorerController][getStreamFile] "${JSON.stringify(e)}"`);
       // TODO: SHOULD BE CONSIDERED TO USE ERROR MIDDLEWARE ({message: } property in this case more like ERR_CODE)
