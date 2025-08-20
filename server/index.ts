@@ -10,16 +10,16 @@ app.use(json());
 
 const mountDirs = [
   {
-    physical: `${MOCK_FOLDER_PREFIX as string}/MOCKS`,
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS`,
     displayName: '\\firstLayerSource',
     includeFilesExt: ['tif'],
   },
   {
-    physical: `${MOCK_FOLDER_PREFIX as string}/MOCKS_2`,
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS_2`,
     displayName: '\\secondLayerSource',
   },
   {
-    physical: `${MOCK_FOLDER_PREFIX as string}/MOCKS_3`,
+    physical: `${MOCK_FOLDER_PREFIX}/MOCKS_3`,
     displayName: '\\thirdLayerSource',
   },
 ];
