@@ -22,10 +22,16 @@ export class StorageExplorerRequestSender {
     return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`).buffer();
   }
 
-  public async writeStreamFile(path: string, buffersize?: string): Promise<supertest.Response> {
+  public async getZipShapefile(folder: string, name: string, buffersize?: string): Promise<supertest.Response> {
     const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
+    return supertest.agent(this.app).get(`/explorer/zipshape?folder=${folder}&name=${name}${bufferQuery}`).buffer();
+  }
+
+  public async writeStreamFile(path: string, buffersize?: number, overwrite?: boolean): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
+    const overwriteQuery = overwrite !== undefined ? `&overwrite=${overwrite}` : '';
     const filePath = pathModule.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
-    return supertest.agent(this.app).post(`/explorer/file?path=${path}${bufferQuery}`).attach('file', filePath);
+    return supertest.agent(this.app).post(`/explorer/file?path=${path}${bufferQuery}${overwriteQuery}`).attach('file', filePath);
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

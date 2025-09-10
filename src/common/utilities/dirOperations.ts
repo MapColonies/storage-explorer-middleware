@@ -8,12 +8,15 @@ import {
   ReadStream,
   WriteStream,
 } from 'node:fs';
-import * as pathLib from 'node:path';
+import { Writable } from 'stream';
+import path, * as pathLib from 'node:path';
 import { lookup } from '@map-colonies/types';
 import busboy from 'busboy';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { BadRequestError, NotFoundError, InternalServerError, ConflictError, HttpError } from '@map-colonies/error-types';
+import archiver from 'archiver';
+import { glob } from 'glob';
 import { ImountDirObj, IReadStream, IWriteStream } from '../interfaces';
 /* eslint-disable @typescript-eslint/naming-convention */
 import IFile from '../../storageExplorer/models/file.model';
@@ -23,10 +26,12 @@ const { stat: statPromise, access: existsPromise } = fsPromises;
 
 enum StorageExplorerErrors {
   FILE_NOT_FOUND = 'fp.error.file_not_found',
+  FILE_ALREADY_EXIST = 'fp.error.file_already_exist',
   FILE_TYPE_NOT_SUPPORTED = 'fp.error.file_not_supported',
   STREAM_CREATION_ERR = 'fp.error.stream_creation_err',
   PATH_IS_NOT_DIR = 'fp.error.path_is_not_dir',
   PATH_INVALID = 'fp.error.path_invalid',
+  MISSING_PARAM = 'fp.missing.param',
 }
 class DirOperations {
   public constructor(
@@ -150,7 +155,7 @@ class DirOperations {
     const isFileExists = await this.checkFileExists(path);
 
     if (isFileExists && overwrite !== true) {
-      throw new ConflictError('File already exists');
+      throw new ConflictError(StorageExplorerErrors.FILE_ALREADY_EXIST);
     }
 
     try {
@@ -208,43 +213,16 @@ class DirOperations {
     stream.on('end', () => {
       const endTime = Date.now();
       const totalTime = endTime - startTime;
-      this.logger.info(`[DirOperations][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), chunks: ${chunkCount}`);
+      this.logger.info(
+        `[DirOperations][openReadStream][${callerName}] successfully streamed file: ${name} after ${totalTime} (ms), chunks: ${chunkCount}`
+      );
     });
 
     stream.on('error', (error) => {
-      this.logger.error(`[DirOperations][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
+      this.logger.error(`[DirOperations][openReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
     });
 
     stream.pipe(res);
-  };
-
-  public readonly openWriteStream = async (
-    req: Request,
-    path: string,
-    callerName: string,
-    overwrite?: boolean,
-    buffersize?: number
-  ): Promise<void> => {
-    const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
-
-    const startTime = Date.now();
-
-    return new Promise((resolve, reject) => {
-      stream.on('close', () => {
-        const endTime = Date.now();
-        const totalTime = endTime - startTime;
-        this.logger.info(`[DirOperations][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
-        resolve();
-      });
-
-      stream.on('error', (error) => {
-        this.logger.error(`[DirOperations][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
-        const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
-        reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
-      });
-
-      req.pipe(stream);
-    });
   };
 
   public readonly openFormDataWriteStream = async (
@@ -272,12 +250,14 @@ class DirOperations {
           stream.on('finish', () => {
             const endTime = Date.now();
             const totalTime = endTime - startTime;
-            this.logger.info(`[DirOperations][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}, chunks: ${chunkCount}`);
+            this.logger.info(
+              `[DirOperations][openFormDataWriteStream][${callerName}] Successfully streamed file: ${name} after (ms) ${totalTime}, chunks: ${chunkCount}`
+            );
             resolve();
           });
 
           stream.on('error', (error) => {
-            this.logger.error(`[DirOperations][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
+            this.logger.error(`[DirOperations][openFormDataWriteStream][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
             const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "dir/file not found"
             reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
           });
@@ -297,6 +277,100 @@ class DirOperations {
       req.pipe(bb);
     });
   };
+
+  public readonly createZipAndOpenReadStream = async (
+    writeStream: Writable,
+    folderPath: string,
+    name: string,
+    callerName: string,
+    maxSize: number,
+    allowedExtensions: string[] = [],
+    bufferSize?: number
+  ): Promise<void> => {
+    const isDirExists = await this.checkFileExists(folderPath);
+
+    if (!isDirExists) {
+      throw new NotFoundError(StorageExplorerErrors.PATH_IS_NOT_DIR);
+    }
+
+    const pattern = allowedExtensions.length > 0 ? `${name}.{${allowedExtensions.map((ext) => ext.replace(/^\./, '')).join(',')}}` : `${name}.*`;
+
+    const files = await glob(pattern, { cwd: folderPath });
+
+    if (files.length === 0) {
+      throw new NotFoundError(StorageExplorerErrors.FILE_NOT_FOUND);
+    }
+
+    const filePaths = files.map((file) => path.join(folderPath, file));
+    const totalUncompressedSize = await this.getTotalSizeOfFiles(filePaths);
+
+    if (totalUncompressedSize > maxSize) {
+      throw new HttpError('Content Too Large', StatusCodes.REQUEST_TOO_LONG);
+    }
+
+    const archive = archiver('zip', {
+      zlib: { level: 9, chunkSize: bufferSize },
+    });
+
+    for (const file of files) {
+      const filePath = path.join(folderPath, file);
+      archive.file(filePath, { name: file });
+    }
+
+    if (typeof (writeStream as Response).setHeader === 'function') {
+      (writeStream as Response).setHeader('Content-Type', 'application/octet-stream');
+      (writeStream as Response).setHeader('Content-Disposition', `attachment; filename="${name}.zip"`);
+    }
+
+    archive.pipe(writeStream);
+
+    await new Promise((resolve, reject) => {
+      writeStream.on('close', resolve);
+      writeStream.on('error', (error) => {
+        this.logger.error(`[DirOperations][createZipAndOpenReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
+        reject(error);
+      });
+      archive.on('error', (error) => {
+        this.logger.error(`[DirOperations][createZipAndOpenReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
+        reject(error);
+      });
+      archive.finalize().catch(reject);
+    });
+  };
+
+  public readonly openWriteStream = async (
+    req: Request,
+    path: string,
+    callerName: string,
+    overwrite?: boolean,
+    buffersize?: number
+  ): Promise<void> => {
+    const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
+
+    const startTime = Date.now();
+
+    return new Promise((resolve, reject) => {
+      stream.on('close', () => {
+        const endTime = Date.now();
+        const totalTime = endTime - startTime;
+        this.logger.info(`[DirOperations][openWriteStream][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
+        resolve();
+      });
+
+      stream.on('error', (error) => {
+        this.logger.error(`[DirOperations][openWriteStream][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
+        const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
+        reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
+      });
+
+      req.pipe(stream);
+    });
+  };
+
+  private async getTotalSizeOfFiles(filePaths: string[]): Promise<number> {
+    const stats = await Promise.all(filePaths.map(async (f) => statPromise(f)));
+    return stats.reduce((sum, s) => sum + s.size, 0);
+  }
 
   private async checkFileExists(file: PathLike): Promise<boolean> {
     return existsPromise(file, fsConstants.F_OK)

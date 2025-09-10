@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 // because of mocking res.setHeader and fakeStream.pipe
-import { createWriteStream, Dirent, ReadStream } from 'node:fs';
+import { createWriteStream, Dirent, ReadStream, WriteStream, constants, unlink, promises } from 'node:fs';
 import { EventEmitter, PassThrough } from 'stream';
-import * as fs from 'node:fs';
+import { join } from 'node:path';
 import { BadRequestError, ConflictError, HttpError, NotFoundError } from '@map-colonies/error-types';
 import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
@@ -31,11 +31,11 @@ const mountDirs: ImountDirObj[] = [
   },
 ];
 
-const mockWriteStream: fs.WriteStream = {
+const mockWriteStream: WriteStream = {
   write: jest.fn(),
   end: jest.fn(),
   on: jest.fn(),
-} as unknown as fs.WriteStream;
+} as unknown as WriteStream;
 
 jest.mock('node:fs', (): typeof import('node:fs') => {
   return {
@@ -273,6 +273,76 @@ describe('storage explorer dirOperations', () => {
       await dirOperations.openWriteStream(req, filePath, '');
 
       expect(req.pipe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('#createZipAndOpenReadStream', () => {
+    it('should create a zip file when files are found', async () => {
+      const fsReal: typeof import('fs') = jest.requireActual('node:fs');
+
+      const folderPath = `${MOCK_FOLDER_PREFIX}/PRODUCT`;
+      const name = 'Product';
+      const zipFilePath: string = join(folderPath, name + '.zip');
+
+      const fileStream: WriteStream = fsReal.createWriteStream(zipFilePath);
+
+      await dirOperations.createZipAndOpenReadStream(fileStream, folderPath, name, '', MAX_BUFFER_SIZE);
+
+      let isFileExist = false;
+
+      try {
+        await promises.access(zipFilePath, constants.F_OK);
+        isFileExist = true;
+      } catch {
+        isFileExist = false;
+      }
+
+      expect(isFileExist).toBe(true);
+
+      unlink(zipFilePath, (err) => {
+        if (err) {
+          console.warn(`Failed to delete file at ${zipFilePath}:`, err.message);
+        } else {
+          console.log(`Deleted file: ${zipFilePath}`);
+        }
+      });
+    });
+
+    it('should throw an error if no files with the specified name are found in the folder', async () => {
+      const folderPath = `${MOCK_FOLDER_PREFIX}/MOCKS`;
+      const name = 'noSuchAFile';
+
+      const fakeStream = new PassThrough();
+
+      const createZip = async (allowedExtensions?: string[]) => {
+        return dirOperations.createZipAndOpenReadStream(fakeStream, folderPath, name, '', MAX_BUFFER_SIZE, allowedExtensions);
+      };
+
+      const testCases = [
+        { allowedExtensions: undefined, expectedError: 'fp.error.file_not_found' },
+        { allowedExtensions: ['.', '!@#', 'notExistExtension'], expectedError: 'fp.error.file_not_found' },
+        { allowedExtensions: [''], expectedError: 'fp.error.file_not_found' },
+        { allowedExtensions: [], expectedError: 'fp.error.file_not_found' },
+      ];
+
+      for (const { allowedExtensions, expectedError } of testCases) {
+        await expect(createZip(allowedExtensions)).rejects.toThrow(expectedError);
+        await expect(createZip(allowedExtensions)).rejects.toBeInstanceOf(NotFoundError);
+      }
+    });
+
+    it('should throw an error if no folder in the path', async () => {
+      const folderPath = `${MOCK_FOLDER_PREFIX}/MOCKS/NotExistFolder`;
+      const name = 'Product';
+
+      const fakeStream = new PassThrough();
+
+      const createZip = async () => {
+        return dirOperations.createZipAndOpenReadStream(fakeStream, folderPath, name, '', MAX_BUFFER_SIZE);
+      };
+
+      await expect(createZip()).rejects.toBeInstanceOf(NotFoundError);
+      await expect(createZip()).rejects.toThrow(`fp.error.path_is_not_dir`);
     });
   });
 });

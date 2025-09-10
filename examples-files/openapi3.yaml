@@ -29,21 +29,21 @@ paths:
         400:
           description: BAD REQUEST
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/error'
         404:
           description: NOT FOUND
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/error'
         500:
           description: INTERNAL SERVER ERROR
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/error'
 
   /explorer/directorybyid:
     get:
@@ -182,6 +182,59 @@ paths:
     #           schema:
     #             $ref: '#/components/schemas/error'
 
+  /explorer/zipshape:
+    get:
+      summary: Gets shapefile ziped content
+      parameters:
+        - in: query
+          name: folder
+          schema:
+            type: string
+          description: Requested folder path.
+          allowReserved: true
+          required: true
+
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Requested file name, without extension.
+          allowReserved: true
+          required: true
+
+        - in: query
+          name: buffersize
+          schema:
+            type: number
+          description: Max buffer size for each data chunk in the stream, in bytes.
+          required: false
+      responses:
+        200:
+          description: OK
+          content:
+            'application/octet-stream':
+              schema:
+                type: object
+                format: binary
+        400:
+          description: BAD REQUEST
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        404:
+          description: NOT FOUND
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/error'
+
   /explorer/filebyid:
     get:
       summary: Gets file content by encrypted id
@@ -234,9 +287,9 @@ paths:
         500:
           description: INTERNAL SERVER ERROR
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/res'
 
 components:
   schemas:
@@ -266,5 +319,5 @@ components:
     error:
       type: object
       properties:
-        error:
+        message:
           type: string

@@ -2,6 +2,7 @@
 import path from 'node:path';
 import httpStatusCodes from 'http-status-codes';
 import jestOpenAPI from 'jest-openapi';
+import * as unzipper from 'unzipper';
 import { DirOperations, encryptZlibPath, LoggersHandler } from '../../../src/common/utilities';
 import getStorageExplorerMiddleware, { IFile } from '../../../src';
 import { MOCK_FOLDER_PREFIX } from '../../MOCKS/utils';
@@ -35,6 +36,10 @@ describe('Storage Explorer', function () {
       physical: `${MOCK_FOLDER_PREFIX}/MOCKS_3`,
       displayName: '\\Third_mount_dir',
     },
+    {
+      physical: `${MOCK_FOLDER_PREFIX}/PRODUCT`,
+      displayName: '\\Fourth_mount_dir',
+    },
   ];
 
   beforeEach(function () {
@@ -61,7 +66,7 @@ describe('Storage Explorer', function () {
 
       it('should return root dir when requested root traversal', async () => {
         const res = await requestSender.getDirectory('/../../../');
-        const body = res.body as IFile[];
+        const body = (res.body as IFile[]).sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1));
         expect(res.type).toBe('application/json');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(body).toMatchObject(rootDirSnap.sort((a, b) => (a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1)));
@@ -145,6 +150,37 @@ describe('Storage Explorer', function () {
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(bufferToString(res.body as number[])).toMatch('just a file');
         expect(res).toSatisfyApiSpec();
+      });
+    });
+
+    describe('zipshape', () => {
+      it('should return 200 when sending buffer size parameter', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', '1000000');
+        expect(res.type).toBe('application/octet-stream');
+        expect(res.status).toBe(httpStatusCodes.OK);
+        expect(res).toSatisfyApiSpec();
+      });
+
+      it('should count and match the number of files inside the ZIP file', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', '1000000');
+        expect(res.type).toBe('application/octet-stream');
+        expect(res.status).toBe(httpStatusCodes.OK);
+
+        const buffer = Buffer.from((await res.body) as ArrayBuffer);
+
+        const directory = await unzipper.Open.buffer(buffer);
+
+        const entries = directory.files;
+
+        expect(entries).toHaveLength(5);
+
+        const expectedFiles = ['Product.cpg', 'Product.dbf', 'Product.prj', 'Product.shp', 'Product.shx'];
+
+        const fileNames = entries.map((e: { path: string }) => e.path);
+
+        expectedFiles.forEach((file) => {
+          expect(fileNames).toContain(file);
+        });
       });
     });
 
@@ -237,6 +273,37 @@ describe('Storage Explorer', function () {
       });
     });
 
+    describe('zipshape', () => {
+      it('should return 404 if folder not found', async () => {
+        const folderPath = `${MOCK_FOLDER_PREFIX}/MOCKS`;
+        const name = 'test';
+        const res = await requestSender.getZipShapefile(folderPath, name);
+        const responseBody = (res.body as { message: string }).message;
+
+        expect(responseBody).toBe('fp.error.file_not_found');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+        expect(res).toSatisfyApiSpec();
+      });
+
+      it('should return 400 if name query param is not a valid file name', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+        const responseBody = (res.body as { message: string }).message;
+
+        expect(responseBody).toBe('fp.error.file_not_found');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+        expect(res).toSatisfyApiSpec();
+      });
+
+      it('should return 400 if buffer size in not a number/undefined', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+        const responseBody = (res.body as { message: string }).message;
+
+        expect(responseBody).toBe('fp.error.file_not_found');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
+        expect(res).toSatisfyApiSpec();
+      });
+    });
+
     /******************************************************************** */
     // Currently, we don't have any upload scenarios.
     // This will be used when it becomes relevant in the future (probably should be revised).
@@ -245,12 +312,6 @@ describe('Storage Explorer', function () {
     //   it('should return 404 if path directory not found', async () => {
     //     const res = await requestSender.writeStreamFile('/\\\\First_mount_dir/3D_data/1b/not_exist_dir/not_there.json');
     //     expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
-    //     expect(res).toSatisfyApiSpec();
-    //   });
-
-    //   it('should return 400 if buffer size in not a number/undefined', async () => {
-    //     const res = await requestSender.writeStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
-    //     expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
     //     expect(res).toSatisfyApiSpec();
     //   });
     // });

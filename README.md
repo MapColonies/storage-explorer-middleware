@@ -56,8 +56,9 @@ Set the `STORAGE_EXPLORER_BUFFER_SIZE` environment variable to configure the buf
 
 ***Notes***
 
-- Please make sure to add file explorer routes to your openapi.yaml file, or all middleware routes will be blocked.
-*(You can also add it to the ignore path regex to exclude explorer routes from the validations)*
+- Please make sure to add the file explorer routes to your `openapi.yaml` file. Otherwise, all middleware routes will be blocked.
+*(Alternatively, you can add the explorer routes to the ignore path regex to exclude them from validation.)*
+Also, ensure that our middleware is added last, since it returns a response and may prevent other middleware from executing.
 You can find an example for the openapi.yaml file [here](https://github.com/MapColonies/storage-explorer-middleware/blob/master/examples-files/openapi3.yaml).
 
 - To consume a file as a stream, include the `x-client-response-type` header in your request. Without this header, the file size is limited to 10 MiB.

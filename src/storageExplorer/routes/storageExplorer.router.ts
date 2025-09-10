@@ -7,6 +7,7 @@ const storageExplorerRouter = (controller: StorageExplorerController): Router =>
   router.get('/directory', controller.getDirectory);
   router.get('/directorybyid', controller.getdirectoryById);
   router.get('/file', controller.getStreamFile);
+  router.get('/zipshape', controller.getZipShapefile);
   /******************************************************************** */
   // Currently, we don't have any upload scenarios.
   // This will be used when it becomes relevant in the future (probably should be revised).

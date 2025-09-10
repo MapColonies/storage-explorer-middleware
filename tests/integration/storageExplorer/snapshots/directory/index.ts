@@ -17,6 +17,12 @@ export const rootDirSnap = [
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
+  {
+    id: 'eJzT0y9JLS4p1vf1d_YO1g8I8ncJdQ4BAEnOBo0-',
+    name: '\\Fourth_mount_dir',
+    isDir: true,
+    parentId: 'eJzTBwAAMAAw',
+  },
 ];
 
 export const innerDirSnap = [
