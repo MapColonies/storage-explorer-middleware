@@ -111,7 +111,7 @@ describe('Storage Explorer', function () {
       });
 
       it('should return 200 when sending buffer size parameter', async () => {
-        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json', '1000000');
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/product.json', 1000000);
         expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(JSON.parse(bufferToString(res.body as number[]))).toMatchObject(fileData);
@@ -155,14 +155,22 @@ describe('Storage Explorer', function () {
 
     describe('zipshape', () => {
       it('should return 200 when sending buffer size parameter', async () => {
-        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', '1000000');
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', 1000000);
         expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
         expect(res).toSatisfyApiSpec();
       });
 
+      it('should return 200 and stream data when x-client-response-type=stream', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', 1000000, {
+          'x-client-response-type': 'stream',
+        });
+        expect(res.status).toBe(httpStatusCodes.OK);
+        expect(res.headers['content-type']).toContain('application/octet-stream');
+      });
+
       it('should count and match the number of files inside the ZIP file', async () => {
-        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', '1000000');
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', 1000000);
         expect(res.type).toBe('application/octet-stream');
         expect(res.status).toBe(httpStatusCodes.OK);
 
@@ -253,12 +261,6 @@ describe('Storage Explorer', function () {
     });
 
     describe('file', () => {
-      it('should return 404 if path not found', async () => {
-        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
-        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
-        expect(res).toSatisfyApiSpec();
-      });
-
       it('should return 400 if required query not provided', async () => {
         const res = await requestSender.getFileWithoutQuery();
         // When connecting to a real server there's open api which should handle these errors
@@ -266,14 +268,47 @@ describe('Storage Explorer', function () {
         expect(res).toSatisfyApiSpec();
       });
 
-      it('should return 400 if buffer size in not a number/undefined', async () => {
-        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+      it('should return 400 when buffer size is non-numeric', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', 'abc' as unknown as number);
         expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect((res.body as { message: string }).message).toMatch(/Invalid buffersize parameter: must be a positive number./i);
+      });
+
+      it('should return 404 if path not found', async () => {
+        const res = await requestSender.getStreamFile('/\\\\First_mount_dir/3D_data/1b/not_there.json');
+        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
         expect(res).toSatisfyApiSpec();
       });
     });
 
     describe('zipshape', () => {
+      it('should return 400 when folder param is missing', async () => {
+        const res = await requestSender.getZipShapefile('', 'Product', 1000000);
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect((res.body as { message: string }).message).toMatch(/fp.error.path_invalid/i);
+      });
+
+      it('should return 400 for negative buffer size', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', -100);
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect((res.body as { message: string }).message).toMatch(/Invalid buffersize parameter: must be a positive number./i);
+      });
+
+      it('should return 400 if name query param is not a valid file name', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\First_mount_dir/zipFile.zip', '!@NotValid');
+        const responseBody = (res.body as { message: string }).message;
+
+        expect(responseBody).toBe('query "name" must be a file name');
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect(res).toSatisfyApiSpec();
+      });
+
+      it('should return 400 when buffer size is non-numeric', async () => {
+        const res = await requestSender.getZipShapefile('/\\\\Fourth_mount_dir', 'Product', 'abc' as unknown as number);
+        expect(res.status).toBe(httpStatusCodes.BAD_REQUEST);
+        expect((res.body as { message: string }).message).toMatch(/Invalid buffersize parameter: must be a positive number./i);
+      });
+
       it('should return 404 if folder not found', async () => {
         const folderPath = `${MOCK_FOLDER_PREFIX}/MOCKS`;
         const name = 'test';
@@ -285,17 +320,10 @@ describe('Storage Explorer', function () {
         expect(res).toSatisfyApiSpec();
       });
 
-      it('should return 400 if name query param is not a valid file name', async () => {
-        const res = await requestSender.getZipShapefile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
-        const responseBody = (res.body as { message: string }).message;
-
-        expect(responseBody).toBe('fp.error.file_not_found');
-        expect(res.status).toBe(httpStatusCodes.NOT_FOUND);
-        expect(res).toSatisfyApiSpec();
-      });
-
-      it('should return 400 if buffer size in not a number/undefined', async () => {
-        const res = await requestSender.getZipShapefile('/\\\\First_mount_dir/zipFile.zip', 'NaN');
+      it('should return 404 if file not found', async () => {
+        const folderPath = `${MOCK_FOLDER_PREFIX}/MOCKS`;
+        const name = 'notExist';
+        const res = await requestSender.getZipShapefile(folderPath, name);
         const responseBody = (res.body as { message: string }).message;
 
         expect(responseBody).toBe('fp.error.file_not_found');

@@ -31,7 +31,6 @@ enum StorageExplorerErrors {
   STREAM_CREATION_ERR = 'fp.error.stream_creation_err',
   PATH_IS_NOT_DIR = 'fp.error.path_is_not_dir',
   PATH_INVALID = 'fp.error.path_invalid',
-  MISSING_PARAM = 'fp.missing.param',
 }
 class DirOperations {
   public constructor(
@@ -189,7 +188,7 @@ class DirOperations {
     buffersize?: number
   ): Promise<void> => {
     /* eslint-disable @typescript-eslint/no-unused-vars */
-    const { stream, contentType, size, name }: IReadStream = await this.getReadStream(filePath, buffersize);
+    const { stream: readStream, contentType, size, name }: IReadStream = await this.getReadStream(filePath, buffersize);
     // contentType: might be used if needed (extracted according to file extension)
 
     if (size > maxSize) {
@@ -206,11 +205,11 @@ class DirOperations {
     const startTime = Date.now();
     let chunkCount = 0;
 
-    stream.on('data', () => {
+    readStream.on('data', () => {
       chunkCount++;
     });
 
-    stream.on('end', () => {
+    readStream.on('end', () => {
       const endTime = Date.now();
       const totalTime = endTime - startTime;
       this.logger.info(
@@ -218,11 +217,15 @@ class DirOperations {
       );
     });
 
-    stream.on('error', (error) => {
+    readStream.on('error', (error) => {
+      if (!readStream.destroyed && !readStream.readableEnded) {
+        readStream.destroy();
+      }
+
       this.logger.error(`[DirOperations][openReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
     });
 
-    stream.pipe(res);
+    readStream.pipe(res);
   };
 
   public readonly openFormDataWriteStream = async (
@@ -257,6 +260,10 @@ class DirOperations {
           });
 
           stream.on('error', (error) => {
+            if (!stream.destroyed && !stream.writableEnded) {
+              stream.destroy();
+            }
+
             this.logger.error(`[DirOperations][openFormDataWriteStream][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
             const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "dir/file not found"
             reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
@@ -269,6 +276,10 @@ class DirOperations {
       });
 
       bb.on('error', (error: Error) => {
+        if (!bb.destroyed && !bb.writableEnded) {
+          bb.destroy();
+        }
+
         this.logger.error(`[${callerName}] Busboy error: ${error.message}`);
         const isNotFound = error.message.includes('ENOENT'); // Node.js stream error for "dir/file not found"
         reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
@@ -327,11 +338,27 @@ class DirOperations {
     await new Promise((resolve, reject) => {
       writeStream.on('close', resolve);
       writeStream.on('error', (error) => {
+        if (!writeStream.destroyed && !writeStream.writableEnded) {
+          writeStream.destroy();
+        }
+
+        if (!archive.destroyed && !archive.writableEnded) {
+          archive.destroy();
+        }
+
         this.logger.error(`[DirOperations][createZipAndOpenReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
         reject(error);
       });
       archive.on('error', (error) => {
-        this.logger.error(`[DirOperations][createZipAndOpenReadStream][${callerName}] failed to stream file: ${name}. error: ${error.message}`);
+        if (!archive.destroyed && !archive.writableEnded) {
+          archive.destroy();
+        }
+
+        if (!writeStream.destroyed && !writeStream.writableEnded) {
+          writeStream.destroy();
+        }
+
+        this.logger.error(`[DirOperations][createZipAndOpenReadStream][${callerName}] failed to archive file: ${name}. error: ${error.message}`);
         reject(error);
       });
       archive.finalize().catch(reject);
@@ -345,25 +372,29 @@ class DirOperations {
     overwrite?: boolean,
     buffersize?: number
   ): Promise<void> => {
-    const { stream, name } = await this.getWriteStream(path, overwrite, buffersize);
+    const { stream: writeStream, name } = await this.getWriteStream(path, overwrite, buffersize);
 
     const startTime = Date.now();
 
     return new Promise((resolve, reject) => {
-      stream.on('close', () => {
+      writeStream.on('close', () => {
         const endTime = Date.now();
         const totalTime = endTime - startTime;
         this.logger.info(`[DirOperations][openWriteStream][${callerName}] Successfully uploaded a file: ${name} after ${totalTime} ms`);
         resolve();
       });
 
-      stream.on('error', (error) => {
+      writeStream.on('error', (error) => {
+        if (!writeStream.destroyed && !writeStream.writableEnded) {
+          writeStream.destroy();
+        }
+
         this.logger.error(`[DirOperations][openWriteStream][${callerName}] Failed to stream file: ${name}. error: ${error.message}`);
         const isNotFound = error.message.includes('ENOENT') || error.message.includes('ENOTDIR'); // Node.js stream error for "file not found"
         reject(new HttpError(error.message, isNotFound ? StatusCodes.NOT_FOUND : StatusCodes.INTERNAL_SERVER_ERROR));
       });
 
-      req.pipe(stream);
+      req.pipe(writeStream);
     });
   };
 
