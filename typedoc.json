@@ -1,4 +1,5 @@
 {
+  "tsconfig": "./tsconfig.doc.json",
   "entryPoints": ["src/index.ts"],
   "out": "docs"
 }
