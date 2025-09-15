@@ -13,7 +13,7 @@ paths:
       summary: Gets directory content
       parameters:
         - in: query
-          name: pathSuffix
+          name: path
           schema:
             type: string
           description: Requested directory path suffix.
@@ -25,7 +25,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/res'
+                $ref: '#/components/schemas/dirRes'
+        400:
+          description: BAD REQUEST
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
+        404:
+          description: NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error'
         500:
           description: INTERNAL SERVER ERROR
           content:
@@ -50,7 +62,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/res'
+                $ref: '#/components/schemas/dirRes'
         500:
           description: INTERNAL SERVER ERROR
           content:
@@ -63,23 +75,163 @@ paths:
       summary: Gets file content
       parameters:
         - in: query
-          name: pathSuffix
+          name: path
           schema:
             type: string
-          description: Requested file path suffix.
+          description: Requested file path.
           allowReserved: true
           required: true
+
+        - in: query
+          name: buffersize
+          schema:
+            type: number
+          description: Max buffer size for each data chunk in the stream, in bytes.
+          required: false
       responses:
         200:
           description: OK
           content:
-            application/json:
+            'application/octet-stream':
+              schema:
+                type: object
+                format: binary
+        400:
+          description: BAD REQUEST
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        404:
+          description: NOT FOUND
+          content:
+            'application/json':
               schema:
                 $ref: '#/components/schemas/res'
         500:
           description: INTERNAL SERVER ERROR
           content:
-            application/json:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/error'
+
+    # post:
+    #   summary: Upload file content to a specified path
+    #   parameters:
+    #     - in: query
+    #       name: path
+    #       schema:
+    #         type: string
+    #       description: The path on the server where the file will be stored.
+    #       allowReserved: true
+    #       required: true
+
+    #     - in: query
+    #       name: overwrite
+    #       schema:
+    #         type: boolean
+    #       description: If file already exist, should overwrite the file or not.
+    #       required: false
+
+    #     - in: query
+    #       name: buffersize
+    #       schema:
+    #         type: number
+    #       description: Max buffer size for each data chunk in the stream, in bytes.
+    #       required: false
+    #   requestBody:
+    #     required: true
+    #     content:
+    #       multipart/form-data:
+    #         schema:
+    #           type: object
+    #           properties:
+    #             file:
+    #               type: string
+    #               format: binary
+    #           required:
+    #             - file
+    #       application/octet-stream:
+    #         schema:
+    #           type: string
+    #           format: binary
+    #   responses:
+    #     201:
+    #       description: CREATED
+    #       content:
+    #         'application/json':
+    #           schema:
+    #             type: object
+    #             properties: {}
+    #     400:
+    #       description: BAD REQUEST
+    #       content:
+    #         'application/json':
+    #           schema:
+    #             $ref: '#/components/schemas/res'
+    #     404:
+    #       description: NOT FOUND
+    #       content:
+    #         'application/json':
+    #           schema:
+    #             $ref: '#/components/schemas/res'
+    #     500:
+    #       description: INTERNAL SERVER ERROR
+    #       content:
+    #         'application/json':
+    #           schema:
+    #             $ref: '#/components/schemas/error'
+
+  /explorer/zipshape:
+    get:
+      summary: Gets shapefile ziped content
+      parameters:
+        - in: query
+          name: folder
+          schema:
+            type: string
+          description: Requested folder path.
+          allowReserved: true
+          required: true
+
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Requested file name, without extension.
+          allowReserved: true
+          required: true
+
+        - in: query
+          name: buffersize
+          schema:
+            type: number
+          description: Max buffer size for each data chunk in the stream, in bytes.
+          required: false
+      responses:
+        200:
+          description: OK
+          content:
+            'application/octet-stream':
+              schema:
+                type: object
+                format: binary
+        400:
+          description: BAD REQUEST
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        404:
+          description: NOT FOUND
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/res'
+        500:
+          description: INTERNAL SERVER ERROR
+          content:
+            'application/json':
               schema:
                 $ref: '#/components/schemas/error'
 
@@ -98,7 +250,7 @@ paths:
         200:
           description: OK
           content:
-            application/json:
+            application/octet-stream:
               schema:
                 $ref: '#/components/schemas/res'
         500:
@@ -126,21 +278,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/res'
+        404:
+          description: NOT FOUND
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/res'
         500:
           description: INTERNAL SERVER ERROR
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/error'
+                $ref: '#/components/schemas/res'
+
 components:
   schemas:
     res:
       type: object
       properties:
         data:
-          type: object
+          oneOf:
+            - type: object
+            - type: string
+    dirRes:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: string
+          name:
+            type: string
+          isDir:
+            type: boolean
+          parentId:
+            type: string
+          modDate:
+            type: string
+            format: date-time
     error:
       type: object
       properties:
-        error:
+        message:
           type: string

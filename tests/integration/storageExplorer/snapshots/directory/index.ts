@@ -1,20 +1,25 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 export const rootDirSnap = [
   {
-    id: 'eJzT0_f1d_YOBgAG0gHb',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
     name: '\\First_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'eJzT0_f1d_YOjjcCAAt4Amw-',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpDxRgBJlwZ6',
     name: '\\Second_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'eJzT0_f1d_YOjjcGAAt5Am0-',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpDxxgBJmAZ7',
     name: '\\Third_mount_dir',
+    isDir: true,
+    parentId: 'eJzTBwAAMAAw',
+  },
+  {
+    id: 'eJzT0y9JLS4p1vf1d_YO1g8I8ncJdQ4BAEnOBo0-',
+    name: '\\Fourth_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
@@ -22,29 +27,29 @@ export const rootDirSnap = [
 
 export const innerDirSnap = [
   {
-    id: 'eJzz9Xf2DtY3dolPSSxJBAAasAQd',
+    id: 'eJwrSS0uKdb39Xf2DoaSxi7xKYkliQBsxwgr',
     name: '3D_data',
     isDir: true,
-    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
   },
   {
-    id: 'eJzz9Xf2DtYvSiwuSS2KT0ksSQQANDEGNw--',
+    id: 'eJwrSS0uKdb39Xf2DoaSRYnFJalF8SmJJYkAloAKRQ--',
     name: 'raster_data',
     isDir: true,
-    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
   },
   {
-    id: 'eJzz9Xf2DtYvSS0u0SvJTAMAIi4E3g--',
+    id: 'eJwrSS0uKdb39Xf2DoaSJanFJXolmWkAeFMI7A--',
     name: 'test.tif',
     isDir: false,
-    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
     size: 100318,
   },
   {
-    id: 'eJzz9Xf2DtYvSS0uMdIDkZl56XqGegZAWJKZBgCOzwlX',
+    id: 'eJwrSS0uKdb39Xf2DoaSJanFJUZ6IDIzL13PUM9Az0CvJDMNACHVDWU-',
     name: 'test2.testing.1.0.0.tif',
     isDir: false,
-    parentId: 'eJzT0_f1d_YOBgAG0gHb',
+    parentId: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
     size: 0,
   },
 ];

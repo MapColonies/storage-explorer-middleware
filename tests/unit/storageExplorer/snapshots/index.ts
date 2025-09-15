@@ -1,19 +1,18 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 export const generateRootDirSnap = [
   {
-    id: 'eJzT0_f1d_YOBgAG0gHb',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpAAPNUF6Q--',
     name: '\\First_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'eJzT0_f1d_YOjjcCAAt4Amw-',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpDxRgBJlwZ6',
     name: '\\Second_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',
   },
   {
-    id: 'eJzT0_f1d_YOjjcGAAt5Am0-',
+    id: 'eJzT0y9JLS4p1vf1d_YOhpDxxgBJmAZ7',
     name: '\\Third_mount_dir',
     isDir: true,
     parentId: 'eJzTBwAAMAAw',

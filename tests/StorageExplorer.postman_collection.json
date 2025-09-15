@@ -1,0 +1,125 @@
+{
+  "info": {
+    "_postman_id": "348bd075-d429-4230-be50-60b5ec9d2c45",
+    "name": "StorageExplorer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+    "_exporter_id": "42816503"
+  },
+  "item": [
+    {
+      "name": "GetStreamFile",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {}
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5656/explorer/file?path=/\\\\firstLayerSource/textFileWithoutSuffix&buffersize=1048576",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5656",
+          "path": ["explorer", "file"],
+          "query": [
+            {
+              "key": "path",
+              "value": "/\\\\firstLayerSource/textFileWithoutSuffix"
+            },
+            {
+              "key": "path",
+              "value": "/\\\\firstLayerSource/test.tif",
+              "disabled": true
+            },
+            {
+              "key": "buffersize",
+              "value": "1048576"
+            },
+            {
+              "key": "buffersize",
+              "value": "not_valid",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "WriteStreamFile - formData",
+      "protocolProfileBehavior": {
+        "disabledSystemHeaders": {}
+      },
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "multipart/form-data;",
+            "type": "text",
+            "disabled": true
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "AddFileHere"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5656/explorer/file?path=/\\\\layerSource/createdFile2&overwrite=true",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5656",
+          "path": ["explorer", "file"],
+          "query": [
+            {
+              "key": "path",
+              "value": "/\\\\layerSource/createdFile2"
+            },
+            {
+              "key": "overwrite",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "WriteStreamFile - binary",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "file",
+          "file": {
+            "src": "AddFileHere"
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5656/explorer/file?path=/\\\\secondLayerSource/createdFile",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5656",
+          "path": ["explorer", "file"],
+          "query": [
+            {
+              "key": "path",
+              "value": "/\\\\secondLayerSource/createdFile"
+            },
+            {
+              "key": "overwrite",
+              "value": "true",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

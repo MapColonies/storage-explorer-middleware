@@ -1,10 +1,13 @@
+import * as pathModule from 'node:path';
+import { IncomingHttpHeaders } from 'node:http';
 import * as supertest from 'supertest';
+import { MOCK_FOLDER_PREFIX } from '../../../MOCKS/utils';
 
 export class StorageExplorerRequestSender {
   public constructor(private readonly app: Express.Application) {}
 
-  public async getDirectory(pathSuffix: string): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/directory?pathSuffix=${pathSuffix}`).set('Content-Type', 'application/json');
+  public async getDirectory(path: string): Promise<supertest.Response> {
+    return supertest.agent(this.app).get(`/explorer/directory?path=${path}`).set('Content-Type', 'application/json');
   }
 
   public async getDirectoryById(id: string): Promise<supertest.Response> {
@@ -12,11 +15,31 @@ export class StorageExplorerRequestSender {
   }
 
   public async getDirectoryWithoutQuery(): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/directory`).set('Content-Type', 'application/json');
+    return supertest.agent(this.app).get(`/explorer/directory`);
   }
 
-  public async getFile(pathSuffix: string): Promise<supertest.Response> {
-    return supertest.agent(this.app).get(`/explorer/file?pathSuffix=${pathSuffix}`).set('Content-Type', 'application/json');
+  public async getStreamFile(path: string, buffersize?: number): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
+    return supertest.agent(this.app).get(`/explorer/file?path=${path}${bufferQuery}`).buffer();
+  }
+
+  public async getZipShapefile(folder: string, name: string, buffersize?: number, headers?: IncomingHttpHeaders): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
+
+    const request = supertest.agent(this.app).get(`/explorer/zipshape?folder=${folder}&name=${name}${bufferQuery}`);
+
+    if (headers) {
+      request.set(headers);
+    }
+
+    return request;
+  }
+
+  public async writeStreamFile(path: string, buffersize?: number, overwrite?: boolean): Promise<supertest.Response> {
+    const bufferQuery = buffersize !== undefined ? `&buffersize=${buffersize}` : '';
+    const overwriteQuery = overwrite !== undefined ? `&overwrite=${overwrite}` : '';
+    const filePath = pathModule.resolve(`${MOCK_FOLDER_PREFIX}/MOCKS/zipFile.zip`);
+    return supertest.agent(this.app).post(`/explorer/file?path=${path}${bufferQuery}${overwriteQuery}`).attach('file', filePath);
   }
 
   public async getFileWithoutQuery(): Promise<supertest.Response> {

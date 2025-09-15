@@ -1,4 +1,4 @@
-import { ReadStream } from 'fs';
+import { ReadStream } from 'node:fs';
 
 export async function streamToString(stream: ReadStream): Promise<string> {
   const chunks: Uint8Array[] = [];

@@ -1,11 +1,16 @@
-import { ReadStream } from 'fs';
+import { ReadStream, WriteStream } from 'node:fs';
 
-export interface IStream {
-  stream: ReadStream;
-  contentType: string;
-  size: number;
+export interface IStream<T> {
+  stream: T;
   name: string;
 }
+
+export type IReadStream = IStream<ReadStream> & {
+  contentType: string | undefined;
+  size: number;
+};
+
+export type IWriteStream = IStream<WriteStream>;
 
 export interface ImountDirObj {
   physical: string;

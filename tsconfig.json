@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es5",
+    "target": "es2015",
+    "lib": ["es2015", "es2015.promise"], 
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "module": "commonjs",
@@ -12,6 +13,6 @@
     "noEmit": true,
     "esModuleInterop": true,
   },
-  "include": ["src", "tests"],
+  "include": ["src", "tests", "server"],
   "exclude": ["dist", "node_modules"]
 }
